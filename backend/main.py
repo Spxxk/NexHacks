@@ -1,42 +1,52 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from beanie import init_beanie
-import motor.motor_asyncio
-import certifi
-import os
-from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 import uvicorn
+import logging
+import asyncio
 
-from models import City
+from database import init_db
+from seed_data import seed_data
+from ambulance_mover import ambulance_mover_loop
 from routes import api_router
 
-# Load environment variables from .env file
-load_dotenv()
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = FastAPI()
 
-# Enable CORS for local development (allow React frontend on localhost to call this API)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown."""
+    # Startup
+    logger.info("🚀 Starting PulseCity API...")
+    init_db()
+    seed_data()
+    
+    # Start ambulance mover loop in background
+    mover_task = asyncio.create_task(ambulance_mover_loop())
+    logger.info("✅ Ambulance mover loop started")
+    
+    yield
+    
+    # Shutdown
+    mover_task.cancel()
+    try:
+        await mover_task
+    except asyncio.CancelledError:
+        pass
+    logger.info("👋 Shutting down...")
+
+
+app = FastAPI(lifespan=lifespan)
+
+# Enable CORS for local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React dev server origin
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev server origins
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
-@app.on_event("startup")
-async def startup_db():
-    """Initialize database connection and Beanie on startup."""
-    mongodb_connection_string = os.getenv("MONGODB_CONNECTION_STRING")
-    database_name = os.getenv("MONGODB_DATABASE_NAME", "pulsecity")
-    
-    if not mongodb_connection_string:
-        raise ValueError("MONGODB_CONNECTION_STRING environment variable is not set")
-    
-    client = motor.motor_asyncio.AsyncIOMotorClient(
-        mongodb_connection_string,
-        tlsCAFile=certifi.where()
-    )
-    await init_beanie(database=client[database_name], document_models=[City])
 
 app.include_router(api_router)
 

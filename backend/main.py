@@ -4,24 +4,39 @@ from contextlib import asynccontextmanager
 import uvicorn
 import logging
 import asyncio
+import os
+from dotenv import load_dotenv
 
-from database import init_db
-from seed_data import seed_data
+from motor.motor_asyncio import AsyncIOMotorClient
+from beanie import init_beanie
+from models import Ambulance, Event, Camera
+
+# from seed_data import seed_data
 from ambulance_mover import ambulance_mover_loop
 from routes import api_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+load_dotenv()
 
+async def init_db():
+    """Initialize Beanie with all document models."""
+    connection_string = os.getenv("MONGODB_CONNECTION_STRING")
+    if not connection_string:
+        raise ValueError("MONGODB_CONNECTION_STRING is not set")
+    client = AsyncIOMotorClient(connection_string)
+    db = client["lifeline"]
+    await init_beanie(database=db, document_models=[Ambulance, Camera, Event])
+    logger.info("✅ Beanie initialized")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
     # Startup
     logger.info("🚀 Starting PulseCity API...")
-    init_db()
-    seed_data()
+    await init_db()
+    # seed_data()
     
     # Start ambulance mover loop in background
     mover_task = asyncio.create_task(ambulance_mover_loop())

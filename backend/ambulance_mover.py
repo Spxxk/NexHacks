@@ -1,5 +1,7 @@
 """Background task to move ambulances toward their assigned events."""
 import asyncio
+from models import Ambulance, AmbulanceStatus, Event
+
 from sqlmodel import Session, select
 from datetime import datetime
 import math
@@ -7,9 +9,6 @@ import math
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-
-from models import Ambulance, AmbulanceStatus, Event, EventStatus
-from database import engine
 
 
 def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:

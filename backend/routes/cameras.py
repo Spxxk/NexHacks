@@ -1,54 +1,33 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
-
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from beanie import PydanticObjectId
 
 from models import Camera
-from database import get_session
+from schemas import Point
 
 router = APIRouter(prefix="/cameras", tags=["Cameras"])
 
 
 class RegisterCameraRequest(BaseModel):
-    id: str
-    lat: float
-    lng: float
-    latest_frame_url: str
-    name: Optional[str] = None
+    location: Point
+    url: str
+    event_ids: Optional[list[PydanticObjectId]] = None
 
 
 @router.get("", response_model=List[Camera])
-def get_cameras(session: Session = Depends(get_session)):
+async def get_cameras():
     """Get all cameras."""
-    statement = select(Camera)
-    cameras = session.exec(statement).all()
-    return cameras
+    return await Camera.find_all().to_list()
 
 
 @router.post("/register")
-def register_camera(
-    request: RegisterCameraRequest,
-    session: Session = Depends(get_session)
-):
+async def register_camera(request: RegisterCameraRequest):
     """Register a new camera."""
-    # Check if camera already exists
-    existing = session.get(Camera, request.id)
-    if existing:
-        raise HTTPException(status_code=400, detail="Camera already exists")
-    
     camera = Camera(
-        id=request.id,
-        lat=request.lat,
-        lng=request.lng,
-        latest_frame_url=request.latest_frame_url,
-        name=request.name or request.id
+        location=request.location,
+        url=request.url,
+        event_ids=request.event_ids or [],
     )
-    session.add(camera)
-    session.commit()
-    session.refresh(camera)
-    
+    await camera.insert()
     return {"ok": True, "camera": camera}

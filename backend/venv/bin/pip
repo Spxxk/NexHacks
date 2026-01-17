@@ -1,4 +1,4 @@
-#!/Users/owen/NexHacks/root/backend/venv/bin/python3.11
+#!/Users/timothywei/Code/NexHacks/backend/venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys

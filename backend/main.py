@@ -1,21 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from beanie import init_beanie, Document
+from beanie import init_beanie
 import motor.motor_asyncio
 import certifi
 import os
 from dotenv import load_dotenv
+import uvicorn
+
+from models import City
+from routes import api_router
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Define a sample Beanie Document (MongoDB collection model)
-class City(Document):
-    name: str
-    country: str
-
-    class Settings:
-        name = "cities"  # collection name in MongoDB
 
 app = FastAPI()
 
@@ -42,18 +38,7 @@ async def startup_db():
     )
     await init_beanie(database=client[database_name], document_models=[City])
 
-@app.get("/", tags=["Root"])
-async def read_root():
-    return {"message": "Welcome to PulseCity API!"}
+app.include_router(api_router)
 
-@app.get("/cities", tags=["Cities"])
-async def get_cities():
-    """Get all cities from the database."""
-    cities = await City.find_all().to_list()
-    return cities
-
-@app.post("/cities", tags=["Cities"])
-async def create_city(city: City):
-    """Create a new city."""
-    await city.insert()
-    return city
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
-class Location(BaseModel):
+class Point(BaseModel):
     lat: float
     lng: float

@@ -1,10 +1,8 @@
-from typing import Optional
 from enum import Enum
-from pydantic import BaseModel, HttpUrl
-from beanie import Document, Link
-from models.location import Location
-from models.camera import Camera
-from models.ambulance import Ambulance
+from pydantic import HttpUrl
+from beanie import Document
+from schemas import Point
+from bson.objectid import ObjectId
 
 class Severity(str, Enum):
     informational = "informational"
@@ -15,10 +13,10 @@ class Event(Document):
     title: str
     description: str
     reference_clip_url: HttpUrl
-    location: Location
-    camera_id: Link[Camera]
-    ambulance_id: Optional[Link[Ambulance]] = None
-    is_resolved: bool = False
+    location: Point
+    camera_id: ObjectId
+    ambulance_id: ObjectId = None
+    is_resolved: bool
 
     class Settings:
         name = "events"

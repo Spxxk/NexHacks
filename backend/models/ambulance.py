@@ -6,7 +6,8 @@ from models.event import Event
 # Define ambulance status enum
 class AmbulanceStatus(str, Enum):
     free = "free"
-    assigned = "assigned"
+    assignedGoing = "assignedGoing"
+    assignedReturning = "assignedReturning"
     unavailable = "unavailable"
 
 class Ambulance(Document):
@@ -15,6 +16,8 @@ class Ambulance(Document):
     is_resolved: bool = False
     eta_seconds: Optional[int] = None
     status: AmbulanceStatus = AmbulanceStatus.free 
+    Path_to_event: list[Location] = []
+
     
 
     class Settings:

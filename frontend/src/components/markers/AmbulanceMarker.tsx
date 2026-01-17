@@ -21,8 +21,8 @@ export default function AmbulanceMarker({
 }: AmbulanceMarkerProps) {
   return (
     <Marker
-      longitude={ambulance.location.lng}
-      latitude={ambulance.location.lat}
+      longitude={ambulance.lng}
+      latitude={ambulance.lat}
       className="transition-transform duration-700 ease-in-out"
     >
       <button
@@ -31,8 +31,8 @@ export default function AmbulanceMarker({
         onMouseEnter={() =>
           onHover({
             label: `Ambulance ${ambulance.id}`,
-            lng: ambulance.location.lng,
-            lat: ambulance.location.lat,
+            lng: ambulance.lng,
+            lat: ambulance.lat,
           })
         }
         onMouseLeave={() => onHover(null)}

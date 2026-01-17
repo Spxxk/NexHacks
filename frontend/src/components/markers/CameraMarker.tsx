@@ -20,15 +20,15 @@ export default function CameraMarker({
   onHover,
 }: CameraMarkerProps) {
   return (
-    <Marker longitude={camera.location.lng} latitude={camera.location.lat}>
+    <Marker longitude={camera.lng} latitude={camera.lat}>
       <button
         type="button"
         onClick={onSelect}
         onMouseEnter={() =>
           onHover({
             label: `Camera ${camera.id}`,
-            lng: camera.location.lng,
-            lat: camera.location.lat,
+            lng: camera.lng,
+            lat: camera.lat,
           })
         }
         onMouseLeave={() => onHover(null)}

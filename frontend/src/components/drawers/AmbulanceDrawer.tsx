@@ -23,8 +23,7 @@ export default function AmbulanceDrawer({ ambulance }: AmbulanceDrawerProps) {
       <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4 text-xs text-slate-300">
         <p className="text-slate-400">Location</p>
         <p>
-          {ambulance.location.lat.toFixed(4)},
-          {ambulance.location.lng.toFixed(4)}
+          {ambulance.lat.toFixed(4)},{ambulance.lng.toFixed(4)}
         </p>
       </div>
     </div>

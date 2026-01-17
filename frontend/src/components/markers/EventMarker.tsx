@@ -24,15 +24,15 @@ export default function EventMarker({
   const pulse = isEmergency ? "animate-ping" : "animate-pulse";
 
   return (
-    <Marker longitude={event.location.lng} latitude={event.location.lat}>
+    <Marker longitude={event.lng} latitude={event.lat}>
       <button
         type="button"
         onClick={onSelect}
         onMouseEnter={() =>
           onHover({
             label: event.title,
-            lng: event.location.lng,
-            lat: event.location.lat,
+            lng: event.lng,
+            lat: event.lat,
           })
         }
         onMouseLeave={() => onHover(null)}

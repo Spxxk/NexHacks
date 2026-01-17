@@ -6,10 +6,8 @@ export type Event = {
   title: string;
   description: string;
   reference_clip_url: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
+  lat: number;
+  lng: number;
   camera_id: string;
   ambulance_id: string | null;
   is_resolved: boolean;
@@ -19,19 +17,15 @@ export type Event = {
 export type Camera = {
   id: string;
   events: Event[];
-  location: {
-    lat: number;
-    lng: number;
-  };
+  lat: number;
+  lng: number;
   url: string;
 };
 
 export type Ambulance = {
   id: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
+  lat: number;
+  lng: number;
   event_id: string | null;
   is_resolved: boolean;
   eta_seconds: number;

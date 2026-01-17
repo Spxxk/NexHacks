@@ -21,6 +21,8 @@ function App() {
   const { data: events } = useEvents();
   const { data: cameras } = useCameras();
   const { data: ambulances } = useAmbulances();
+
+  console.log("ambulances: ", ambulances);
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activeTab, setActiveTab] = useState<"map" | "events">("map");

@@ -1,8 +1,8 @@
 import { Marker } from "react-map-gl/maplibre";
-import type { EventItem } from "../../types";
+import type { Event } from "../../types";
 
 type EventMarkerProps = {
-  event: EventItem;
+  event: Event;
   isSelected: boolean;
   isRelated: boolean;
   onSelect: () => void;
@@ -19,8 +19,9 @@ export default function EventMarker({
   onSelect,
   onHover,
 }: EventMarkerProps) {
-  const severityGlow = event.severity >= 4 ? "bg-red-500" : "bg-red-400";
-  const pulse = event.severity >= 4 ? "animate-ping" : "animate-pulse";
+  const isEmergency = event.severity === "emergency";
+  const severityGlow = isEmergency ? "bg-red-500" : "bg-amber-400";
+  const pulse = isEmergency ? "animate-ping" : "animate-pulse";
 
   return (
     <Marker longitude={event.location.lng} latitude={event.location.lat}>

@@ -6,20 +6,13 @@ import Map, {
   type LayerProps,
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type {
-  AmbulanceItem,
-  CameraItem,
-  DrawerSelection,
-  EventItem,
-} from "../types";
+import type { DrawerSelection } from "../types";
+import { useAmbulances, useCameras, useEvents } from "../hooks/api";
 import AmbulanceMarker from "./markers/AmbulanceMarker";
 import CameraMarker from "./markers/CameraMarker";
 import EventMarker from "./markers/EventMarker";
 
 type LifelineMapProps = {
-  events: EventItem[];
-  cameras: CameraItem[];
-  ambulances: AmbulanceItem[];
   selection: DrawerSelection | null;
   onSelect: (selection: DrawerSelection) => void;
 };
@@ -55,13 +48,10 @@ const buildingLayer: LayerProps = {
 /**
  * Map component built with MapLibre via react-map-gl, rendering markers and 3D buildings.
  */
-export default function LifelineMap({
-  events,
-  cameras,
-  ambulances,
-  selection,
-  onSelect,
-}: LifelineMapProps) {
+export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
+  const { data: events } = useEvents();
+  const { data: cameras } = useCameras();
+  const { data: ambulances } = useAmbulances();
   const [hoverInfo, setHoverInfo] = useState<{
     label: string;
     lng: number;
@@ -79,19 +69,15 @@ export default function LifelineMap({
       const event = events.find((item) => item.id === selection.id);
       return {
         events: new Set(event ? [event.id] : []),
-        cameras: new Set(event?.cameraIds ?? []),
-        ambulances: new Set(
-          event?.assignedAmbulanceId ? [event.assignedAmbulanceId] : [],
-        ),
+        cameras: new Set(event?.camera_id ? [event.camera_id] : []),
+        ambulances: new Set(event?.ambulance_id ? [event.ambulance_id] : []),
       };
     }
 
     if (selection.type === "ambulance") {
       const ambulance = ambulances.find((item) => item.id === selection.id);
       return {
-        events: new Set(
-          ambulance?.targetEventId ? [ambulance.targetEventId] : [],
-        ),
+        events: new Set(ambulance?.event_id ? [ambulance.event_id] : []),
         cameras: new Set<string>(),
         ambulances: new Set(ambulance?.id ? [ambulance.id] : []),
       };

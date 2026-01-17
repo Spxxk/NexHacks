@@ -1,8 +1,8 @@
 import { Marker } from "react-map-gl/maplibre";
-import type { CameraItem } from "../../types";
+import type { Camera } from "../../types";
 
 type CameraMarkerProps = {
-  camera: CameraItem;
+  camera: Camera;
   isSelected: boolean;
   isRelated: boolean;
   onSelect: () => void;
@@ -26,14 +26,14 @@ export default function CameraMarker({
         onClick={onSelect}
         onMouseEnter={() =>
           onHover({
-            label: camera.name,
+            label: `Camera ${camera.id}`,
             lng: camera.location.lng,
             lat: camera.location.lat,
           })
         }
         onMouseLeave={() => onHover(null)}
         className="relative flex h-9 w-9 items-center justify-center"
-        aria-label={camera.name}
+        aria-label={`Camera ${camera.id}`}
       >
         <span
           className={`relative flex h-7 w-7 items-center justify-center rounded-full border ${

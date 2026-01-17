@@ -3,12 +3,9 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import App from "./App.tsx";
-import { startOvershootLoop } from "./overshootWorker";
+import { startAnalysisLoop } from "./analysisLoop";
 
-// Start Overshoot loop after a short delay to ensure app is mounted
-setTimeout(() => {
-  startOvershootLoop();
-}, 2000);
+startAnalysisLoop();
 
 const queryClient = new QueryClient();
 

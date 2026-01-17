@@ -1,20 +1,58 @@
 from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from datetime import datetime
+from pydantic import BaseModel
 
 from models import Event, EventStatus, Ambulance, AmbulanceStatus
+from beanie import PydanticObjectId
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
 
-@router.get("", response_model=List[Event])
+class EventResponse(BaseModel):
+    """Response model for events that converts _id to id and ObjectIds to strings."""
+    id: str
+    severity: str
+    title: str
+    description: str
+    reference_clip_url: str
+    lat: float
+    lng: float
+    camera_id: str
+    ambulance_id: Optional[str] = None
+    status: str
+    created_at: datetime
+    resolved_at: Optional[datetime] = None
+
+    @classmethod
+    def from_event(cls, event: Event) -> "EventResponse":
+        """Convert Event document to EventResponse."""
+        return cls(
+            id=str(event.id),
+            severity=event.severity.value,
+            title=event.title,
+            description=event.description,
+            reference_clip_url=event.reference_clip_url,
+            lat=event.lat,
+            lng=event.lng,
+            camera_id=str(event.camera_id),
+            ambulance_id=str(event.ambulance_id) if event.ambulance_id else None,
+            status=event.status.value,
+            created_at=event.created_at,
+            resolved_at=event.resolved_at,
+        )
+
+
+@router.get("", response_model=List[EventResponse])
 async def get_events(status: Optional[EventStatus] = None):
     """Get all events, optionally filtered by status."""
     if status:
         events = await Event.find(Event.status == status).to_list()
     else:
         events = await Event.find_all().to_list()
-    return events
+    
+    # Convert Event documents to EventResponse
+    return [EventResponse.from_event(event) for event in events]
 
 
 @router.post("/{event_id}/resolve")

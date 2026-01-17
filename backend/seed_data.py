@@ -47,6 +47,12 @@ async def seed_data():
             "lat": 40.4410,
             "lng": -79.9959,
             "latest_frame_url": "http://localhost:5055/latest_frame",
+            "name": "CAM_12",  # Match camera server's CAMERA_LOCATION
+        },
+        {
+            "lat": 40.4410,
+            "lng": -79.9959,
+            "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-12",
         },
         {

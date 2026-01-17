@@ -50,24 +50,30 @@ async def find_nearest_idle_ambulance(event_lat: float, event_lng: float) -> Opt
 @router.post("/process_event")
 async def process_event(request: ProcessEventRequest):
     """Main ingestion endpoint for events from AI/camera service."""
-    # Get or create camera
-    camera = await Camera.get(request.camera_id)
+    print(f"[Backend] Received event from camera: {request.camera_id}")
+    print(f"[Backend] Event details: {request.title} ({request.severity})")
+    
+    # Get or create camera by name (camera_id is the camera name like "CAM_12")
+    camera = await Camera.find_one(Camera.name == request.camera_id)
     if not camera:
+        print(f"[Backend] Camera '{request.camera_id}' not found, creating new camera...")
         # Auto-create camera for hackathon speed
         camera = Camera(
-            id=request.camera_id,
             lat=40.7501,  # Default location (can be updated later)
             lng=-73.9866,
             latest_frame_url=f"http://localhost:5055/latest_frame",
             name=request.camera_id
         )
         await camera.insert()
+        print(f"[Backend] Created new camera: {camera.id} ({camera.name})")
+    else:
+        print(f"[Backend] Found existing camera: {camera.id} ({camera.name})")
     
     # Add small jitter to event location (mock variation from camera)
     jitter_lat = camera.lat + random.uniform(-0.001, 0.001)
     jitter_lng = camera.lng + random.uniform(-0.001, 0.001)
     
-    # Create event
+    # Create event (camera_id is the Camera's _id, not the name)
     event = Event(
         severity=request.severity,
         title=request.title,
@@ -75,11 +81,12 @@ async def process_event(request: ProcessEventRequest):
         reference_clip_url=request.reference_clip_url,
         lat=jitter_lat,
         lng=jitter_lng,
-        camera_id=request.camera_id,
+        camera_id=camera.id,  # Use camera's MongoDB _id
         status=EventStatus.OPEN,
         created_at=datetime.utcnow()
     )
     await event.insert()
+    print(f"[Backend] Created event: {event.id} - {event.title} ({event.severity})")
     
     # If emergency, assign nearest idle ambulance
     if request.severity == Severity.EMERGENCY:

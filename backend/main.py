@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(_app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
     # Startup
-    logger.info("🚀 Starting PulseCity API...")
+    logger.info("🚀 Starting Lifeline...")
     await init_db()
 
     # Start ambulance mover loop in background

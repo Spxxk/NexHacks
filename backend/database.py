@@ -11,7 +11,7 @@ MONGODB_CONNECTION_STRING = os.getenv(
     "MONGODB_CONNECTION_STRING",
     "mongodb+srv://owenchend_db_user:kU2F1onGsj12M0LH@cluster0.ec2quxk.mongodb.net/?appName=Cluster0&retryWrites=true&w=majority",
 )
-MONGODB_DATABASE_NAME = os.getenv("MONGODB_DATABASE_NAME", "lifeline")
+MONGODB_DATABASE_NAME = os.getenv("MONGODB_DATABASE_NAME", "Lifeline")
 
 client: AsyncIOMotorClient | None = None
 

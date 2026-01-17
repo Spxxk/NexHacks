@@ -13,10 +13,10 @@ export type Event = {
   lat: number;
   lng: number;
   camera_id: string;
-  ambulance_id: number | null;
+  ambulance_id: string | null;
   status: EventStatus;
-  created_at: string;
-  resolved_at?: string | null;
+  created_at: string | Date;
+  resolved_at?: string | Date | null;
 };
 
 export type Camera = {

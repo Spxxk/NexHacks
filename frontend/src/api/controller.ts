@@ -41,3 +41,20 @@ export function getAmbulances(): Promise<Ambulance[]> {
 export function getHospitals(): Promise<Hospital[]> {
   return fetchJson<Hospital[]>("/hospitals");
 }
+
+/**
+ * Manually trigger an emergency event for a camera.
+ */
+export async function triggerCameraEmergency(cameraId: string): Promise<Event> {
+  const response = await fetch(`${API_BASE}/cameras/${cameraId}/trigger_emergency`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to trigger emergency: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  return data.event;
+}

@@ -7,8 +7,8 @@ from models.camera import Camera
 from models.ambulance import Ambulance
 
 class Severity(str, Enum):
-    informational = "informational"
-    emergency = "emergency"
+    INFORMATIONAL = "informational"
+    EMERGENCY = "emergency"
 
 class Event(Document):
     severity: Severity

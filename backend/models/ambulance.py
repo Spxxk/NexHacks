@@ -3,14 +3,12 @@ from beanie import Document, Link
 from models.location import Location
 from models.event import Event
 
-class AssignedStatus(str, Enum):
-    going = "going"
-    returning = "returning"
-
+    
 class AmbulanceStatus(str, Enum):
-    free = "free"
-    assigned = AssignedStatus  # Note: holds the enum itself
-    unavailable = "unavailable"
+    FREE = "free"
+    GOING = "going"
+    RETURNING = "returning"
+    UNAVAILIBLE = "unavailable"
 
 class Ambulance(Document):
     location: Location

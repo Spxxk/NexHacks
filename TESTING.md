@@ -22,7 +22,7 @@ If you don’t have one, use a sample (e.g. from [Sample Videos](https://sample-
 In `frontend/.env`:
 
 ```
-VITE_OVERSHOOT_API_KEY=your_real_overshoot_key
+VITE_OVERSHOOT_API_KEY=ovs_16e2ba18927ea6bfa68cc5bd90048d1f
 ```
 
 Restart the frontend after changing `.env`.

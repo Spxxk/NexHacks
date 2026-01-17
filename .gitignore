@@ -36,5 +36,5 @@ camera/.tmp_frames/
 camera/clip.mp4
 
 # Database
-backend/pulsecity.db
+backend/Lifeline.db
 backend/*.db

@@ -53,7 +53,7 @@ python main.py
 
 Or: `uvicorn main:app --reload --host 0.0.0.0 --port 8000` (adjust if your `main` uses a different module path).
 
-- `http://localhost:8000/` should return something like `{"message":"Welcome to PulseCity API!"}` (or your root response).
+- `http://localhost:8000/` should return something like `{"message":"Welcome to Lifeline API!"}` (or your root response).
 
 ### Terminal 3 — Frontend (port 5173)
 

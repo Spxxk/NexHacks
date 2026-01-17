@@ -4,7 +4,8 @@ import cors from "cors";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-// import { RealtimeVision } from "@overshoot/sdk"; // Removed - now in frontend
+import fetch from "node-fetch";
+import FormData from "form-data";
 
 /**
  * =========================
@@ -26,7 +27,9 @@ const WINDOW_SECS = 3;        // rolling window length for clip
  * Env
  * =========================
  */
-// Removed OVERSHOOT_API_KEY requirement - now handled in frontend
+const OVERSHOOT_API_KEY = process.env.OVERSHOOT_API_KEY || "ovs_16e2ba18927ea6bfa68cc5bd90048d1f";
+const OVERSHOOT_API_URL = process.env.OVERSHOOT_API_URL || "https://cluster1.overshoot.ai/api/v0.2";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 
 console.log("CWD:", process.cwd());
 
@@ -201,8 +204,177 @@ async function buildClipFromFrames(outPath: string, framesToUse: Frame[]) {
   });
 }
 
-// Removed Overshoot analysis - now handled in frontend
-// Removed postEvent - now handled in frontend
+/**
+ * =========================
+ * Analysis loop (Overshoot + backend posting)
+ * =========================
+ */
+type Severity = "informational" | "emergency";
+
+let analysisRunning = false;
+let lastEmergencyAt = 0;
+let lastEmergencyTitle: string | null = null;
+let lastEmergencyDescription: string | null = null;
+
+function canSendEmergency(): boolean {
+  const now = Date.now();
+  if (now - lastEmergencyAt < 30_000) return false;
+  lastEmergencyAt = now;
+  return true;
+}
+
+async function runOvershootAnalysis(clipPath: string): Promise<{ title: string; description: string; severity: Severity } | null> {
+  try {
+    // Read the clip file
+    const clipBuffer = fs.readFileSync(clipPath);
+    
+    // Create form data for Overshoot API
+    const formData = new FormData();
+    formData.append("file", clipBuffer, {
+      filename: "clip.mp4",
+      contentType: "video/mp4",
+    });
+    
+    const prompt = `You are monitoring city security footage.
+
+Return STRICT JSON only:
+{
+  "title": string,
+  "description": string,
+  "severity": "informational" | "emergency"
+}
+
+Emergency if the clip shows:
+- a person collapsing/falling and not recovering
+- a person lying motionless on the ground
+- visible serious injury/bleeding
+- violent assault
+- obvious medical distress requiring urgent help
+
+Otherwise informational.
+
+Keep title under 6 words.
+Keep description under 25 words.
+Do not include any extra keys or text.`;
+
+    formData.append("prompt", prompt);
+    formData.append("outputSchema", JSON.stringify({
+      type: "object",
+      properties: {
+        title: { type: "string" },
+        description: { type: "string" },
+        severity: { type: "string", enum: ["informational", "emergency"] },
+      },
+      required: ["title", "description", "severity"],
+    }));
+
+    // Call Overshoot HTTP API
+    const response = await fetch(`${OVERSHOOT_API_URL}/analyze`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OVERSHOOT_API_KEY}`,
+        ...formData.getHeaders(),
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`Overshoot API error: ${response.status} ${errorText}`);
+      return null;
+    }
+
+    const result: any = await response.json();
+    
+    // Parse the result (might be in result.result or directly in response)
+    let parsed: any;
+    if (typeof result === "string") {
+      parsed = JSON.parse(result);
+    } else if (result && typeof result.result === "string") {
+      parsed = JSON.parse(result.result);
+    } else {
+      parsed = result;
+    }
+    
+    return {
+      title: parsed.title,
+      description: parsed.description,
+      severity: parsed.severity as Severity,
+    };
+  } catch (e) {
+    console.warn("Overshoot analysis error:", (e as Error).message);
+    return null;
+  }
+}
+
+async function postEventToBackend(result: { title: string; description: string; severity: Severity }) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/process_event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        camera_id: CAMERA_LOCATION,
+        severity: result.severity,
+        title: result.title,
+        description: result.description,
+        reference_clip_url: `http://localhost:${PORT}/latest_clip.mp4`,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`Backend POST error: ${response.status}`);
+      return false;
+    }
+
+    if (result.severity === "emergency" && response.ok) {
+      lastEmergencyTitle = result.title;
+      lastEmergencyDescription = result.description;
+    }
+
+    return true;
+  } catch (e) {
+    console.warn("Backend POST error:", (e as Error).message);
+    return false;
+  }
+}
+
+async function runAnalysisAndPost() {
+  if (analysisRunning) return;
+  analysisRunning = true;
+
+  try {
+    if (!latestClipPath || !fs.existsSync(latestClipPath)) {
+      return; // Clip not ready yet
+    }
+
+    // Run Overshoot analysis
+    const result = await runOvershootAnalysis(latestClipPath);
+    if (!result) return;
+
+    console.log("[Overshoot]", result);
+
+    // Apply cooldown and deduplication for emergencies
+    if (result.severity === "emergency") {
+      const isDuplicate =
+        lastEmergencyTitle === result.title && lastEmergencyDescription === result.description;
+      if (isDuplicate) return;
+      if (!canSendEmergency()) return;
+    }
+
+    // Post to backend
+    await postEventToBackend(result);
+  } catch (e) {
+    console.warn("Analysis loop error:", (e as Error).message);
+  } finally {
+    analysisRunning = false;
+  }
+}
+
+function startAnalysisLoop() {
+  console.log("Starting analysis loop...");
+  // Run every 2s to avoid hammering the model
+  setInterval(runAnalysisAndPost, 2000);
+}
 
 /**
  * =========================
@@ -242,4 +414,5 @@ app.listen(PORT, () => {
   console.log(`Camera server running on http://localhost:${PORT}`);
   startFrameCapture();
   startClipLoop();
+  startAnalysisLoop();
 });

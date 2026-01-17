@@ -1,44 +1,46 @@
-export type Severity = 1 | 2 | 3 | 4 | 5;
+export type EventSeverity = "informational" | "emergency";
 
-export type EventItem = {
+export type Event = {
   id: string;
+  severity: EventSeverity;
   title: string;
   description: string;
-  severity: Severity;
-  etaMinutes: number;
-  referenceFrameUrl: string;
+  reference_clip_url: string;
   location: {
     lat: number;
     lng: number;
   };
-  assignedAmbulanceId?: string;
-  cameraIds?: string[];
+  camera_id: string;
+  ambulance_id: string | null;
+  is_resolved: boolean;
+  timestamp?: string;
 };
 
-export type CameraItem = {
+export type Camera = {
   id: string;
-  name: string;
-  status: "online" | "offline" | "degraded";
-  logs: string[];
-  snapshotUrl: string;
+  events: Event[];
   location: {
     lat: number;
     lng: number;
   };
+  url: string;
 };
 
-export type AmbulanceItem = {
+export type Ambulance = {
   id: string;
-  name: string;
-  etaMinutes: number;
   location: {
     lat: number;
     lng: number;
   };
-  targetEventId?: string;
+  event_id: string | null;
+  is_resolved: boolean;
+  eta_seconds: number;
 };
 
 export type DrawerSelection =
   | { type: "event"; id: string }
   | { type: "camera"; id: string }
   | { type: "ambulance"; id: string };
+
+export const isEmergencySeverity = (severity: EventSeverity) =>
+  severity === "emergency";

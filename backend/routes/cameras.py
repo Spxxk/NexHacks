@@ -29,14 +29,14 @@ async def register_camera(request: RegisterCameraRequest):
     existing = await Camera.get(request.id)
     if existing:
         raise HTTPException(status_code=400, detail="Camera already exists")
-    
+
     camera = Camera(
         id=request.id,
         lat=request.lat,
         lng=request.lng,
         latest_frame_url=request.latest_frame_url,
-        name=request.name or request.id
+        name=request.name or request.id,
     )
     await camera.insert()
-    
+
     return {"ok": True, "camera": camera}

@@ -16,19 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
     # Startup
     logger.info("🚀 Starting PulseCity API...")
     await init_db()
     await seed_data()
-    
+
     # Start ambulance mover loop in background
     mover_task = asyncio.create_task(ambulance_mover_loop())
     logger.info("✅ Ambulance mover loop started")
-    
+
     yield
-    
+
     # Shutdown
     mover_task.cancel()
     try:
@@ -43,9 +43,12 @@ app = FastAPI(lifespan=lifespan)
 # Enable CORS for local development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React dev server origins
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],  # React dev server origins
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 app.include_router(api_router)

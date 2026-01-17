@@ -60,3 +60,12 @@ class Ambulance(Document):
 
     class Settings:
         name = "ambulances"
+
+
+class Hospital(Document):
+    name: str
+    lat: float
+    lng: float
+
+    class Settings:
+        name = "hospitals"

@@ -28,10 +28,9 @@ export function useEvents() {
         return mockEvents;
       }
     },
-    refetchInterval: REFRESH_INTERVAL, // Refetch every 10 seconds
+    refetchInterval: 200, // Refetch every 10 seconds
     refetchIntervalInBackground: true, // Continue refetching when tab is in background
     staleTime: 0, // Always consider data stale so it refetches on interval
-    cacheTime: 5 * 60 * 1000, // Keep data in cache for 5 minutes
     initialData: [],
   });
 
@@ -79,7 +78,7 @@ export function useAmbulances() {
         return mockAmbulances;
       }
     },
-    refetchInterval: REFRESH_INTERVAL,
+    refetchInterval: 1000,
     refetchIntervalInBackground: true,
     staleTime: 2000,
     initialData: [],

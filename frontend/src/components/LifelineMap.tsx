@@ -24,8 +24,8 @@ type LifelineMapProps = {
 };
 
 const TuringCityView = {
-  longitude: -73.9857,
-  latitude: 40.7484,
+  longitude: -79.94277710160165,
+  latitude: 40.44089893147938,
   zoom: 13.2,
   pitch: 56,
   bearing: -18,

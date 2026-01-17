@@ -19,11 +19,11 @@ import AmbulanceDrawer from "./components/drawers/AmbulanceDrawer";
  */
 function App() {
   const { data: events } = useEvents();
-  console.log("Events data:", events);
+  console.log("Events:", events);
+
   const { data: cameras } = useCameras();
-  console.log("Cameras data:", cameras);
+
   const { data: ambulances } = useAmbulances();
-  console.log("Ambulances data:", ambulances);
 
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<

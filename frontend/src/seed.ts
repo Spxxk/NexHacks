@@ -1,7 +1,7 @@
 import type { Ambulance, Camera, Event, Hospital } from "./types";
 
-const baseLat = 40.7484;
-const baseLng = -73.9857;
+const baseLat = 40.44089893147938;
+const baseLng = -79.94277710160165;
 
 const mockEvents: Event[] = [
   {

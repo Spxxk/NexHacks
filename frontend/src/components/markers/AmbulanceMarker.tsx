@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import type { Ambulance } from "../../types";
 
@@ -19,10 +20,50 @@ export default function AmbulanceMarker({
   onSelect,
   onHover,
 }: AmbulanceMarkerProps) {
+  const [position, setPosition] = useState({
+    lat: ambulance.lat,
+    lng: ambulance.lng,
+  });
+  const animationRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    const start = { ...position };
+    const target = { lat: ambulance.lat, lng: ambulance.lng };
+    const duration = 700;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+
+      setPosition({
+        lat: start.lat + (target.lat - start.lat) * eased,
+        lng: start.lng + (target.lng - start.lng) * eased,
+      });
+
+      if (t < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [ambulance.lat, ambulance.lng]);
+
   return (
     <Marker
-      longitude={ambulance.lng}
-      latitude={ambulance.lat}
+      longitude={position.lng}
+      latitude={position.lat}
       className="transition-transform duration-700 ease-in-out"
     >
       <button
@@ -31,8 +72,8 @@ export default function AmbulanceMarker({
         onMouseEnter={() =>
           onHover({
             label: `Ambulance ${ambulance.id}`,
-            lng: ambulance.lng,
-            lat: ambulance.lat,
+            lng: position.lng,
+            lat: position.lat,
           })
         }
         onMouseLeave={() => onHover(null)}

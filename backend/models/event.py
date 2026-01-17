@@ -5,8 +5,8 @@ from schemas import Point
 from bson.objectid import ObjectId
 
 class Severity(str, Enum):
-    informational = "informational"
-    emergency = "emergency"
+    INFORMATIONAL = "informational"
+    EMERGENCY = "emergency"
 
 class Event(Document):
     severity: Severity

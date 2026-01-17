@@ -4,7 +4,7 @@ from beanie import Document
 from bson import ObjectId
 from schemas import Point
 
-# Define ambulance status enum
+    
 class AmbulanceStatus(str, Enum):
     FREE = "free"
     GOING = "going"

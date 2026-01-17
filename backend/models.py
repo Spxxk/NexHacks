@@ -3,6 +3,8 @@ from typing import Optional
 from datetime import datetime
 from enum import Enum
 
+from schemas import Point
+
 
 class Severity(str, Enum):
     INFORMATIONAL = "informational"
@@ -57,6 +59,7 @@ class Ambulance(Document):
     event_id: Optional[PydanticObjectId] = None
     eta_seconds: Optional[int] = None
     updated_at: datetime
+    path: list[Point] | None = None
 
     class Settings:
         name = "ambulances"

@@ -5,7 +5,16 @@ import logging
 import os
 
 from database import init_db
-from models import Ambulance, AmbulanceStatus, Camera, Hospital
+from models import (
+    Ambulance,
+    AmbulanceStatus,
+    Camera,
+    Event,
+    EventStatus,
+    Hospital,
+    Severity,
+)
+from schemas import Point
 from motor.motor_asyncio import AsyncIOMotorClient
 
 import certifi
@@ -36,16 +45,20 @@ async def seed_data():
 
     db = client[MONGODB_DATABASE_NAME]
     await db.drop_collection("cameras")
+    await db.drop_collection("events")
     await db.drop_collection("hospitals")
     await db.drop_collection("ambulances")
 
     logger.info("✅ Collections dropped, seeding data...")
 
     # 🔹 Seed cameras
+    base_lat = 40.44089893147938
+    base_lng = -79.94277710160165
+
     cameras_data = [
         {
-            "lat": 40.4410,
-            "lng": -79.9959,
+            "lat": base_lat + 0.0000,
+            "lng": base_lng + -0.0000,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "CAM_12",  # Match camera server's CAMERA_LOCATION
         },
@@ -56,56 +69,56 @@ async def seed_data():
             "name": "Astra-12",
         },
         {
-            "lat": 40.4445,
-            "lng": -79.9932,
+            "lat": base_lat + 0.0035,
+            "lng": base_lng + 0.0027,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-18",
         },
         {
-            "lat": 40.4472,
-            "lng": -79.9911,
+            "lat": base_lat + 0.0062,
+            "lng": base_lng + 0.0048,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-06",
         },
         {
-            "lat": 40.4396,
-            "lng": -79.9987,
+            "lat": base_lat + -0.0014,
+            "lng": base_lng + -0.0028,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-01",
         },
         {
-            "lat": 40.4376,
-            "lng": -79.9924,
+            "lat": base_lat + -0.0034,
+            "lng": base_lng + 0.0035,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-02",
         },
         {
-            "lat": 40.4429,
-            "lng": -79.9905,
+            "lat": base_lat + 0.0019,
+            "lng": base_lng + 0.0054,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-03",
         },
         {
-            "lat": 40.4458,
-            "lng": -79.9892,
+            "lat": base_lat + 0.0048,
+            "lng": base_lng + 0.0067,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-04",
         },
         {
-            "lat": 40.4490,
-            "lng": -79.9960,
+            "lat": base_lat + 0.0080,
+            "lng": base_lng + -0.0001,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-05",
         },
         {
-            "lat": 40.4369,
-            "lng": -79.9974,
+            "lat": base_lat + -0.0041,
+            "lng": base_lng + -0.0015,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-07",
         },
         {
-            "lat": 40.4438,
-            "lng": -79.9836,
+            "lat": base_lat + 0.0028,
+            "lng": base_lng + 0.0123,
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-08",
         },
@@ -116,24 +129,64 @@ async def seed_data():
 
     # 🔹 Seed hospitals
     hospitals_data = [
-        {"name": "UPMC Presbyterian", "lat": 40.4425, "lng": -79.9602},
-        {"name": "UPMC Mercy", "lat": 40.4364, "lng": -79.9855},
-        {"name": "Allegheny General Hospital", "lat": 40.4570, "lng": -80.0033},
+        {
+            "name": "UPMC Presbyterian",
+            "lat": base_lat + 0.0015,
+            "lng": base_lng + 0.0357,
+        },
+        {
+            "name": "UPMC Mercy",
+            "lat": base_lat + -0.0046,
+            "lng": base_lng + 0.0104,
+        },
+        {
+            "name": "Allegheny General Hospital",
+            "lat": base_lat + 0.0160,
+            "lng": base_lng + -0.0074,
+        },
     ]
 
     hospitals = [Hospital(**hosp) for hosp in hospitals_data]
     await Hospital.insert_many(hospitals)
 
+    event_location = Point(lat=base_lat + 0.0032, lng=base_lng + 0.0018)
+    first_event = Event(
+        severity=Severity.EMERGENCY,
+        title="Auto-seeded event",
+        description="Simulated emergency event for demo",
+        reference_clip_url="http://localhost:5055/latest_clip.mp4",
+        lat=event_location.lat,
+        lng=event_location.lng,
+        camera_id=cameras[0].id,
+        status=EventStatus.OPEN,
+        created_at=datetime.utcnow(),
+    )
+    await first_event.insert()
+
     # 🔹 Seed ambulances (one per hospital)
-    ambulances = [
-        Ambulance(
-            lat=h["lat"],
-            lng=h["lng"],
+    ambulances = []
+    for index, hospital in enumerate(hospitals_data):
+        ambulance = Ambulance(
+            lat=hospital["lat"],
+            lng=hospital["lng"],
             status=AmbulanceStatus.IDLE,
             updated_at=datetime.utcnow(),
         )
-        for h in hospitals_data
-    ]
+
+        if index == 0:
+            path_points = [
+                Point(
+                    lat=hospital["lat"]
+                    + (event_location.lat - hospital["lat"]) * (step / 10),
+                    lng=hospital["lng"]
+                    + (event_location.lng - hospital["lng"]) * (step / 10),
+                )
+                for step in range(1, 11)
+            ]
+            ambulance.path = path_points
+            ambulance.event_id = first_event.id
+
+        ambulances.append(ambulance)
     await Ambulance.insert_many(ambulances)
 
     logger.info(

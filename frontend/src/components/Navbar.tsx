@@ -11,7 +11,7 @@ type NavbarProps = {
  * Top navigation bar with branding, user info, and sign out.
  */
 export default function Navbar({
-  userName = "Operator Ava K.",
+  userName = "Operator Tim W.",
   userRole = "Command Tier • On Duty",
   activeTab,
   onTabChange,

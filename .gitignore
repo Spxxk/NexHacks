@@ -9,6 +9,7 @@ backend/*.pyd
 backend/.Python
 backend/env/
 __pycache__/
+*.egg-info/
 
 # Environment variables
 backend/.env

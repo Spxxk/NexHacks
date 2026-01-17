@@ -21,7 +21,6 @@ export default function CameraMarker({
 }: CameraMarkerProps) {
   const cameraLabel = camera.name ? camera.name : `Camera ${camera.id}`;
 
-  console.log("Rendering CameraMarker for:", camera);
   return (
     <Marker longitude={camera.lng} latitude={camera.lat}>
       <button

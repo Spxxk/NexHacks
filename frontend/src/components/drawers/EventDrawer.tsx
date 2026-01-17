@@ -10,7 +10,7 @@ type EventDrawerProps = {
  */
 export default function EventDrawer({ event, ambulances }: EventDrawerProps) {
   const assigned = ambulances.find(
-    (ambulance) => ambulance.id === event.ambulance_id,
+    (ambulance) => String(ambulance.id) === String(event.ambulance_id),
   );
   const etaMinutes = assigned
     ? Math.max(1, Math.round(assigned.eta_seconds / 60))

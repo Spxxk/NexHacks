@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   NotificationStack,
   type NotificationItem,
@@ -19,47 +19,42 @@ import AmbulanceDrawer from "./components/drawers/AmbulanceDrawer";
  */
 function App() {
   const { data: events } = useEvents();
+  console.log("Events data:", events);
   const { data: cameras } = useCameras();
+  console.log("Cameras data:", cameras);
   const { data: ambulances } = useAmbulances();
+  console.log("Ambulances data:", ambulances);
 
-  console.log("ambulances: ", ambulances);
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState<
+    string[]
+  >([]);
   const [activeTab, setActiveTab] = useState<"map" | "events">("map");
 
-  const seenEventIds = useRef(new Set<string>());
-
-  // Notify on new high-severity events.
-  useEffect(() => {
-    const newAlerts: NotificationItem[] = [];
-
-    events.forEach((event) => {
-      if (
-        isEmergencySeverity(event.severity) &&
-        !seenEventIds.current.has(event.id)
-      ) {
-        seenEventIds.current.add(event.id);
+  const notifications = useMemo<NotificationItem[]>(() => {
+    const items = events
+      .filter((event) => isEmergencySeverity(event.severity))
+      .map((event) => {
         const assignedAmbulance = ambulances.find(
-          (ambulance) => ambulance.id === event.ambulance_id,
+          (ambulance) => String(ambulance.id) === String(event.ambulance_id),
         );
-        const etaMinutes = assignedAmbulance
-          ? Math.max(1, Math.round(assignedAmbulance.eta_seconds / 60))
-          : null;
-        newAlerts.push({
+        const etaMinutes =
+          assignedAmbulance?.eta_seconds != null
+            ? Math.max(1, Math.round(assignedAmbulance.eta_seconds / 60))
+            : null;
+        return {
           id: `alert-${event.id}`,
           type: "alert",
           message: `Emergency: ${event.title} • Severity ${event.severity}${
             etaMinutes ? ` • ETA ${etaMinutes} min` : ""
           }`,
           duration: 6000,
-        });
-      }
-    });
+        } satisfies NotificationItem;
+      })
+      .filter((item) => !dismissedNotificationIds.includes(item.id));
 
-    if (newAlerts.length) {
-      setNotifications((prev) => [...newAlerts, ...prev].slice(0, 4));
-    }
-  }, [events]);
+    return items.slice(0, 4);
+  }, [events, ambulances, dismissedNotificationIds]);
 
   const selectedEntity = useMemo(() => {
     if (!selection) return null;
@@ -128,7 +123,12 @@ function App() {
             )}
 
             {selection?.type === "camera" && selectedEntity && (
-              <CameraDrawer camera={selectedEntity as Camera} />
+              <CameraDrawer
+                camera={selectedEntity as Camera}
+                events={events.filter(
+                  (event) => event.camera_id === (selectedEntity as Camera).id,
+                )}
+              />
             )}
 
             {selection?.type === "ambulance" && selectedEntity && (
@@ -139,7 +139,9 @@ function App() {
           <NotificationStack
             items={notifications}
             onDismiss={(id) =>
-              setNotifications((prev) => prev.filter((item) => item.id !== id))
+              setDismissedNotificationIds((prev) =>
+                prev.includes(id) ? prev : [...prev, id],
+              )
             }
           />
         </div>

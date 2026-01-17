@@ -1,3 +1,4 @@
+/* @react-compiler disable */
 import { useMemo } from "react";
 import {
   flexRender,
@@ -29,8 +30,8 @@ export default function EventsPage({ onSelectEvent }: EventsPageProps) {
 
   const sortedEvents = useMemo(() => {
     return [...events].sort((a, b) => {
-      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
       return bTime - aTime;
     });
   }, [events]);
@@ -89,7 +90,7 @@ export default function EventsPage({ onSelectEvent }: EventsPageProps) {
       },
       {
         header: "Timestamp",
-        accessorKey: "timestamp",
+        accessorKey: "created_at",
         cell: (info: CellContext<Event, unknown>) => (
           <span className="text-slate-400">
             {formatTimestamp(info.getValue() as string | undefined)}
@@ -98,10 +99,10 @@ export default function EventsPage({ onSelectEvent }: EventsPageProps) {
       },
       {
         header: "Resolved",
-        accessorKey: "is_resolved",
+        accessorKey: "status",
         cell: (info: CellContext<Event, unknown>) => (
           <span className="text-slate-300">
-            {(info.getValue() as boolean) ? "Yes" : "No"}
+            {(info.getValue() as Event["status"]) === "resolved" ? "Yes" : "No"}
           </span>
         ),
       },

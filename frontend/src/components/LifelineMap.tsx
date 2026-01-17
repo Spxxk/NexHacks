@@ -7,10 +7,16 @@ import Map, {
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { DrawerSelection } from "../types";
-import { useAmbulances, useCameras, useEvents } from "../hooks/api";
+import {
+  useAmbulances,
+  useCameras,
+  useEvents,
+  useHospitals,
+} from "../hooks/api";
 import AmbulanceMarker from "./markers/AmbulanceMarker";
 import CameraMarker from "./markers/CameraMarker";
 import EventMarker from "./markers/EventMarker";
+import HospitalMarker from "./markers/HospitalMarker";
 
 type LifelineMapProps = {
   selection: DrawerSelection | null;
@@ -18,8 +24,8 @@ type LifelineMapProps = {
 };
 
 const TuringCityView = {
-  longitude: -79.9959,
-  latitude: 40.4406,
+  longitude: -73.9857,
+  latitude: 40.7484,
   zoom: 13.2,
   pitch: 56,
   bearing: -18,
@@ -52,6 +58,7 @@ export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
   const { data: events } = useEvents();
   const { data: cameras } = useCameras();
   const { data: ambulances } = useAmbulances();
+  const { data: hospitals } = useHospitals();
   const [hoverInfo, setHoverInfo] = useState<{
     label: string;
     lng: number;
@@ -70,16 +77,20 @@ export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
       return {
         events: new Set(event ? [event.id] : []),
         cameras: new Set(event?.camera_id ? [event.camera_id] : []),
-        ambulances: new Set(event?.ambulance_id ? [event.ambulance_id] : []),
+        ambulances: new Set(
+          event?.ambulance_id ? [String(event.ambulance_id)] : [],
+        ),
       };
     }
 
     if (selection.type === "ambulance") {
       const ambulance = ambulances.find((item) => item.id === selection.id);
       return {
-        events: new Set(ambulance?.event_id ? [ambulance.event_id] : []),
+        events: new Set(
+          ambulance?.event_id ? [String(ambulance.event_id)] : [],
+        ),
         cameras: new Set<string>(),
-        ambulances: new Set(ambulance?.id ? [ambulance.id] : []),
+        ambulances: new Set(ambulance?.id ? [String(ambulance.id)] : []),
       };
     }
 
@@ -110,7 +121,7 @@ export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
             isSelected={
               selection?.type === "event" && selection.id === event.id
             }
-            isRelated={relatedIds.events.has(event.id)}
+            isRelated={relatedIds.events.has(String(event.id))}
             onSelect={() => onSelect({ type: "event", id: event.id })}
             onHover={setHoverInfo}
           />
@@ -136,8 +147,16 @@ export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
             isSelected={
               selection?.type === "ambulance" && selection.id === ambulance.id
             }
-            isRelated={relatedIds.ambulances.has(ambulance.id)}
+            isRelated={relatedIds.ambulances.has(String(ambulance.id))}
             onSelect={() => onSelect({ type: "ambulance", id: ambulance.id })}
+            onHover={setHoverInfo}
+          />
+        ))}
+
+        {hospitals.map((hospital) => (
+          <HospitalMarker
+            key={hospital.id}
+            hospital={hospital}
             onHover={setHoverInfo}
           />
         ))}

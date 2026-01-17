@@ -1,4 +1,4 @@
-from beanie import Document
+from beanie import Document, PydanticObjectId
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -22,7 +22,6 @@ class AmbulanceStatus(str, Enum):
 
 
 class Camera(Document):
-    id: str  # Custom string ID
     lat: float
     lng: float
     latest_frame_url: str
@@ -40,10 +39,11 @@ class Event(Document):
     reference_clip_url: str
     lat: float
     lng: float
-    camera_id: str
-    ambulance_id: Optional[int] = None
+    camera_id: PydanticObjectId
+    ambulance_id: Optional[PydanticObjectId] = None
     status: EventStatus = EventStatus.OPEN
     created_at: datetime
+    dispatched_at: datetime | None = None
     resolved_at: Optional[datetime] = None
 
     class Settings:
@@ -54,7 +54,7 @@ class Ambulance(Document):
     lat: float
     lng: float
     status: AmbulanceStatus = AmbulanceStatus.IDLE
-    event_id: Optional[int] = None
+    event_id: Optional[PydanticObjectId] = None
     eta_seconds: Optional[int] = None
     updated_at: datetime
 

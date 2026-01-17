@@ -1,7 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAmbulances, getCameras, getEvents } from "../api/controller";
-import { mockAmbulances, mockCameras, mockEvents } from "../seed";
-import type { Ambulance, Camera, Event } from "../types";
+import {
+  getAmbulances,
+  getCameras,
+  getEvents,
+  getHospitals,
+} from "../api/controller";
+import {
+  mockAmbulances,
+  mockCameras,
+  mockEvents,
+  mockHospitals,
+} from "../seed";
+import type { Ambulance, Camera, Event, Hospital } from "../types";
 
 const REFRESH_INTERVAL = 5000;
 
@@ -66,6 +76,31 @@ export function useAmbulances() {
         return await getAmbulances();
       } catch {
         return mockAmbulances;
+      }
+    },
+    refetchInterval: REFRESH_INTERVAL,
+    refetchIntervalInBackground: true,
+    staleTime: 2000,
+    initialData: [],
+  });
+
+  return {
+    ...query,
+    data: query.data ?? [],
+  };
+}
+
+/**
+ * Fetch hospital locations.
+ */
+export function useHospitals() {
+  const query = useQuery<Hospital[]>({
+    queryKey: ["hospitals"],
+    queryFn: async () => {
+      try {
+        return await getHospitals();
+      } catch {
+        return mockHospitals;
       }
     },
     refetchInterval: REFRESH_INTERVAL,

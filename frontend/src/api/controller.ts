@@ -1,4 +1,4 @@
-import type { Ambulance, Camera, Event } from "../types";
+import type { Ambulance, Camera, Event, Hospital } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
@@ -33,4 +33,11 @@ export function getCameras(): Promise<Camera[]> {
  */
 export function getAmbulances(): Promise<Ambulance[]> {
   return fetchJson<Ambulance[]>("/ambulances");
+}
+
+/**
+ * Fetch hospital locations from the backend.
+ */
+export function getHospitals(): Promise<Hospital[]> {
+  return fetchJson<Hospital[]>("/hospitals");
 }

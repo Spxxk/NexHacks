@@ -19,6 +19,9 @@ export default function CameraMarker({
   onSelect,
   onHover,
 }: CameraMarkerProps) {
+  const cameraLabel = camera.name ? camera.name : `Camera ${camera.id}`;
+
+  console.log("Rendering CameraMarker for:", camera);
   return (
     <Marker longitude={camera.lng} latitude={camera.lat}>
       <button
@@ -26,14 +29,14 @@ export default function CameraMarker({
         onClick={onSelect}
         onMouseEnter={() =>
           onHover({
-            label: `Camera ${camera.id}`,
+            label: cameraLabel,
             lng: camera.lng,
             lat: camera.lat,
           })
         }
         onMouseLeave={() => onHover(null)}
         className="relative flex h-9 w-9 items-center justify-center"
-        aria-label={`Camera ${camera.id}`}
+        aria-label={cameraLabel}
       >
         <span
           className={`relative flex h-7 w-7 items-center justify-center rounded-full border ${

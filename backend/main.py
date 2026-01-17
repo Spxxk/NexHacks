@@ -21,7 +21,6 @@ async def lifespan(_app: FastAPI):
     # Startup
     logger.info("🚀 Starting PulseCity API...")
     await init_db()
-    await seed_data()
 
     # Start ambulance mover loop in background
     mover_task = asyncio.create_task(ambulance_mover_loop())
@@ -46,6 +45,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
     ],  # React dev server origins
     allow_methods=["*"],
     allow_headers=["*"],

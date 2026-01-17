@@ -1,4 +1,8 @@
 export type EventSeverity = "informational" | "emergency";
+export type EventStatus = "open" | "enroute" | "resolved";
+export type AmbulanceStatus = "idle" | "enroute" | "unavailable";
+
+export type IdValue = string | number;
 
 export type Event = {
   id: string;
@@ -9,26 +13,35 @@ export type Event = {
   lat: number;
   lng: number;
   camera_id: string;
-  ambulance_id: string | null;
-  is_resolved: boolean;
-  timestamp?: string;
+  ambulance_id: number | null;
+  status: EventStatus;
+  created_at: string;
+  resolved_at?: string | null;
 };
 
 export type Camera = {
   id: string;
-  events: Event[];
   lat: number;
   lng: number;
-  url: string;
+  latest_frame_url: string;
+  name?: string | null;
 };
 
 export type Ambulance = {
   id: string;
   lat: number;
   lng: number;
-  event_id: string | null;
-  is_resolved: boolean;
-  eta_seconds: number;
+  status: AmbulanceStatus;
+  event_id: number | null;
+  eta_seconds?: number | null;
+  updated_at: string;
+};
+
+export type Hospital = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
 };
 
 export type DrawerSelection =

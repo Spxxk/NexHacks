@@ -3,9 +3,6 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import App from "./App.tsx";
-import { startAnalysisLoop } from "./analysisLoop";
-
-startAnalysisLoop();
 
 const queryClient = new QueryClient();
 

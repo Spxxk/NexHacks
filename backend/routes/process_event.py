@@ -1,18 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 import math
-
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import random
 
 from models import Event, EventStatus, Severity, Camera, Ambulance, AmbulanceStatus
-from database import get_session
 
-router = APIRouter(tags=["Events"])
+router = APIRouter(tags=["Process Event"])
 
 
 class ProcessEventRequest(BaseModel):
@@ -33,10 +28,9 @@ def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> fl
     return R * c
 
 
-def find_nearest_idle_ambulance(event_lat: float, event_lng: float, session: Session) -> Optional[Ambulance]:
+async def find_nearest_idle_ambulance(event_lat: float, event_lng: float) -> Optional[Ambulance]:
     """Find the nearest idle ambulance to the event location."""
-    statement = select(Ambulance).where(Ambulance.status == AmbulanceStatus.IDLE)
-    ambulances = session.exec(statement).all()
+    ambulances = await Ambulance.find(Ambulance.status == AmbulanceStatus.IDLE).to_list()
     
     if not ambulances:
         return None
@@ -54,13 +48,10 @@ def find_nearest_idle_ambulance(event_lat: float, event_lng: float, session: Ses
 
 
 @router.post("/process_event")
-def process_event(
-    request: ProcessEventRequest,
-    session: Session = Depends(get_session)
-):
+async def process_event(request: ProcessEventRequest):
     """Main ingestion endpoint for events from AI/camera service."""
     # Get or create camera
-    camera = session.get(Camera, request.camera_id)
+    camera = await Camera.get(request.camera_id)
     if not camera:
         # Auto-create camera for hackathon speed
         camera = Camera(
@@ -70,12 +61,9 @@ def process_event(
             latest_frame_url=f"http://localhost:5055/latest_frame",
             name=request.camera_id
         )
-        session.add(camera)
-        session.commit()
-        session.refresh(camera)
+        await camera.insert()
     
     # Add small jitter to event location (mock variation from camera)
-    import random
     jitter_lat = camera.lat + random.uniform(-0.001, 0.001)
     jitter_lng = camera.lng + random.uniform(-0.001, 0.001)
     
@@ -88,17 +76,16 @@ def process_event(
         lat=jitter_lat,
         lng=jitter_lng,
         camera_id=request.camera_id,
-        status=EventStatus.OPEN
+        status=EventStatus.OPEN,
+        created_at=datetime.utcnow()
     )
-    session.add(event)
-    session.commit()
-    session.refresh(event)
+    await event.insert()
     
     # If emergency, assign nearest idle ambulance
     if request.severity == Severity.EMERGENCY:
-        ambulance = find_nearest_idle_ambulance(jitter_lat, jitter_lng, session)
+        ambulance = await find_nearest_idle_ambulance(jitter_lat, jitter_lng)
         if ambulance:
-            # Calculate initial ETA (distance in km / 60 km/h * 3600 = seconds)
+            # Calculate initial ETA
             distance = calculate_distance(jitter_lat, jitter_lng, ambulance.lat, ambulance.lng)
             eta_seconds = int((distance / 60) * 3600)  # Assume 60 km/h average speed
             
@@ -106,14 +93,10 @@ def process_event(
             ambulance.event_id = event.id
             ambulance.eta_seconds = eta_seconds
             ambulance.updated_at = datetime.utcnow()
+            await ambulance.save()
             
             event.ambulance_id = ambulance.id
             event.status = EventStatus.ENROUTE
-            
-            session.add(ambulance)
-            session.add(event)
-            session.commit()
-            session.refresh(event)
-            session.refresh(ambulance)
+            await event.save()
     
     return {"ok": True, "event": event}

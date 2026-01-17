@@ -3,8 +3,8 @@ import Button from "./Button";
 type NavbarProps = {
   userName?: string;
   userRole?: string;
-  activeTab?: "map" | "events";
-  onTabChange?: (tab: "map" | "events") => void;
+  activeTab?: "map" | "events" | "test";
+  onTabChange?: (tab: "map" | "events" | "test") => void;
 };
 
 /**
@@ -53,6 +53,17 @@ export default function Navbar({
               }`}
             >
               Events
+            </button>
+            <button
+              type="button"
+              onClick={() => onTabChange("test")}
+              className={`rounded-full px-4 py-1 transition ${
+                activeTab === "test"
+                  ? "bg-cyan-500/20 text-cyan-200"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Test Overshoot
             </button>
           </div>
         )}

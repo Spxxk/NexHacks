@@ -13,6 +13,7 @@ import { isEmergencySeverity } from "./types";
 import EventDrawer from "./components/drawers/EventDrawer";
 import CameraDrawer from "./components/drawers/CameraDrawer";
 import AmbulanceDrawer from "./components/drawers/AmbulanceDrawer";
+import { TestOvershoot } from "./TestOvershoot";
 
 /**
  * Top-level Lifeline application component.
@@ -23,7 +24,7 @@ function App() {
   const { data: ambulances } = useAmbulances();
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"map" | "events">("map");
+  const [activeTab, setActiveTab] = useState<"map" | "events" | "test">("map");
 
   const seenEventIds = useRef(new Set<string>());
 
@@ -87,13 +88,17 @@ function App() {
                 />
               </main>
             </>
-          ) : (
+          ) : activeTab === "events" ? (
             <main className="flex-1 overflow-y-auto">
               <EventsPage
                 onSelectEvent={(eventId) =>
                   setSelection({ type: "event", id: eventId })
                 }
               />
+            </main>
+          ) : (
+            <main className="flex-1 overflow-y-auto">
+              <TestOvershoot />
             </main>
           )}
 

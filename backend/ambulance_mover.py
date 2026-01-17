@@ -1,15 +1,9 @@
 """Background task to move ambulances toward their assigned events."""
 import asyncio
-from sqlmodel import Session, select
 from datetime import datetime
 import math
 
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent))
-
 from models import Ambulance, AmbulanceStatus, Event, EventStatus
-from database import engine
 
 
 def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -22,7 +16,7 @@ def calculate_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> fl
     return R * c
 
 
-def move_ambulance_toward_event(ambulance: Ambulance, event: Event, session: Session):
+async def move_ambulance_toward_event(ambulance: Ambulance, event: Event):
     """Move ambulance a small step toward the event location."""
     # Calculate direction vector
     dlat = event.lat - ambulance.lat
@@ -37,11 +31,15 @@ def move_ambulance_toward_event(ambulance: Ambulance, event: Event, session: Ses
         # Close enough - mark as resolved
         event.status = EventStatus.RESOLVED
         event.resolved_at = datetime.utcnow()
+        await event.save()
+        
         ambulance.status = AmbulanceStatus.IDLE
         ambulance.event_id = None
         ambulance.eta_seconds = None
         ambulance.lat = event.lat
         ambulance.lng = event.lng
+        ambulance.updated_at = datetime.utcnow()
+        await ambulance.save()
     else:
         # Move toward event
         unit_dlat = dlat / distance
@@ -52,27 +50,23 @@ def move_ambulance_toward_event(ambulance: Ambulance, event: Event, session: Ses
         # Update ETA
         remaining_distance = calculate_distance(ambulance.lat, ambulance.lng, event.lat, event.lng)
         ambulance.eta_seconds = int((remaining_distance / 60) * 3600)  # 60 km/h
-    
-    ambulance.updated_at = datetime.utcnow()
-    session.add(ambulance)
-    session.add(event)
-    session.commit()
+        
+        ambulance.updated_at = datetime.utcnow()
+        await ambulance.save()
 
 
 async def ambulance_mover_loop():
     """Background loop that moves ambulances every second."""
     while True:
         try:
-            with Session(engine) as session:
-                # Find all ambulances that are enroute
-                statement = select(Ambulance).where(Ambulance.status == AmbulanceStatus.ENROUTE)
-                ambulances = session.exec(statement).all()
-                
-                for ambulance in ambulances:
-                    if ambulance.event_id:
-                        event = session.get(Event, ambulance.event_id)
-                        if event and event.status != EventStatus.RESOLVED:
-                            move_ambulance_toward_event(ambulance, event, session)
+            # Find all ambulances that are enroute
+            ambulances = await Ambulance.find(Ambulance.status == AmbulanceStatus.ENROUTE).to_list()
+            
+            for ambulance in ambulances:
+                if ambulance.event_id:
+                    event = await Event.get(ambulance.event_id)
+                    if event and event.status != EventStatus.RESOLVED:
+                        await move_ambulance_toward_event(ambulance, event)
         except Exception as e:
             print(f"Error in ambulance mover loop: {e}")
         

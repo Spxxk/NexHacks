@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from beanie import Document
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -21,16 +21,19 @@ class AmbulanceStatus(str, Enum):
     UNAVAILABLE = "unavailable"
 
 
-class Camera(SQLModel, table=True):
-    id: str = Field(primary_key=True)
+class Camera(Document):
+    id: str  # Custom string ID
     lat: float
     lng: float
     latest_frame_url: str
     name: Optional[str] = None
 
+    class Settings:
+        name = "cameras"
+        use_cache = False
 
-class Event(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+
+class Event(Document):
     severity: Severity
     title: str
     description: str
@@ -40,15 +43,20 @@ class Event(SQLModel, table=True):
     camera_id: str
     ambulance_id: Optional[int] = None
     status: EventStatus = EventStatus.OPEN
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime
     resolved_at: Optional[datetime] = None
 
+    class Settings:
+        name = "events"
 
-class Ambulance(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+
+class Ambulance(Document):
     lat: float
     lng: float
     status: AmbulanceStatus = AmbulanceStatus.IDLE
     event_id: Optional[int] = None
     eta_seconds: Optional[int] = None
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime
+
+    class Settings:
+        name = "ambulances"

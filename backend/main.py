@@ -20,8 +20,8 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
     # Startup
     logger.info("🚀 Starting PulseCity API...")
-    init_db()
-    seed_data()
+    await init_db()
+    await seed_data()
     
     # Start ambulance mover loop in background
     mover_task = asyncio.create_task(ambulance_mover_loop())

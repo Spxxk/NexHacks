@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 import math
 import random
 
+from choose_ambulance import get_ambulance_and_path
+from utils.ambulance import simulate_ambulance
 from models import Camera, Event, EventStatus, Severity, Ambulance, AmbulanceStatus
 from utils.live_ws import broadcast_all
 
@@ -45,18 +47,18 @@ async def get_cameras():
                 if expected_port is None:
                     normalized_name = camera.name.replace("_", "-")
                     expected_port = camera_port_map.get(normalized_name)
-            
+
             if expected_port is not None:
                 expected_url = f"http://localhost:{expected_port}/latest_frame"
                 if camera.latest_frame_url != expected_url:
                     camera.latest_frame_url = expected_url
                     await camera.save()
                     updated = True
-    
+
     if updated:
         # Re-fetch to return updated cameras
         cameras = await Camera.find_all().to_list()
-    
+
     return cameras
 
 
@@ -180,25 +182,14 @@ async def trigger_emergency(camera_id: str):
     await broadcast_all("events")
 
     # Assign nearest idle ambulance
-    ambulance = await find_nearest_idle_ambulance(jitter_lat, jitter_lng)
+    ambulance, eta, path = await get_ambulance_and_path(event.id)
     if ambulance:
-        # Calculate initial ETA
-        distance = calculate_distance(
-            jitter_lat, jitter_lng, ambulance.lat, ambulance.lng
-        )
-        eta_seconds = int((distance / 60) * 3600)  # Assume 60 km/h average speed
-
-        ambulance.status = AmbulanceStatus.ENROUTE
-        ambulance.event_id = event.id
-        ambulance.eta_seconds = eta_seconds
-        ambulance.updated_at = datetime.now(timezone.utc)
+        ambulance.path = path
+        ambulance.eta_seconds = eta
         await ambulance.save()
-        await broadcast_all("ambulances")
-
-        event.ambulance_id = ambulance.id
-        event.status = EventStatus.ENROUTE
-        await event.save()
-        await broadcast_all("events")
+        await simulate_ambulance(ambulance.id)
+    else:
+        print("[Backend] No idle ambulances available to assign.")
 
     print(
         f"[Backend] Manual emergency triggered for camera {camera_id}: {scenario['title']}"

@@ -125,19 +125,6 @@ async def seed_data():
             updated_at=datetime.utcnow(),
         )
 
-        if index == 0:
-            path_points = [
-                Point(
-                    lat=hospital["lat"]
-                    + (event_location.lat - hospital["lat"]) * (step / 10),
-                    lng=hospital["lng"]
-                    + (event_location.lng - hospital["lng"]) * (step / 10),
-                )
-                for step in range(1, 11)
-            ]
-            ambulance.path = path_points
-            ambulance.event_id = first_event.id
-
         ambulances.append(ambulance)
     await Ambulance.insert_many(ambulances)
 

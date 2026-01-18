@@ -17,6 +17,7 @@ import AmbulanceMarker from "./markers/AmbulanceMarker";
 import CameraMarker from "./markers/CameraMarker";
 import EventMarker from "./markers/EventMarker";
 import HospitalMarker from "./markers/HospitalMarker";
+import AmbulancePaths from "./paths/AmbulancePaths";
 
 type LifelineMapProps = {
   selection: DrawerSelection | null;
@@ -114,18 +115,23 @@ export default function LifelineMap({ selection, onSelect }: LifelineMapProps) {
         <Layer {...buildingLayer} />
         <NavigationControl position="bottom-right" />
 
-        {events.map((event) => (
-          <EventMarker
-            key={event.id}
-            event={event}
-            isSelected={
-              selection?.type === "event" && selection.id === event.id
-            }
-            isRelated={relatedIds.events.has(String(event.id))}
-            onSelect={() => onSelect({ type: "event", id: event.id })}
-            onHover={setHoverInfo}
-          />
-        ))}
+        <AmbulancePaths ambulances={ambulances} />
+
+        {events.map(
+          (event) =>
+            event.status !== "resolved" && (
+              <EventMarker
+                key={event.id}
+                event={event}
+                isSelected={
+                  selection?.type === "event" && selection.id === event.id
+                }
+                isRelated={relatedIds.events.has(String(event.id))}
+                onSelect={() => onSelect({ type: "event", id: event.id })}
+                onHover={setHoverInfo}
+              />
+            ),
+        )}
 
         {cameras.map((camera) => (
           <CameraMarker

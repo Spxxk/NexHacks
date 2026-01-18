@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from schemas import Point
 from database import init_db
 import asyncio
 from pathlib import Path
@@ -17,7 +18,7 @@ from maps_call import compute_route_eta_and_path
 from routes.cameras import calculate_distance
 
 
-async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
+async def get_ambulance_and_path(event_id: PydanticObjectId):
     """
     Find the nearest idle ambulance, compute ETA and path, and
     atomically mark it as ENROUTE with ETA and timestamp.
@@ -31,7 +32,7 @@ async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
     event_lng = event.lng
 
     ambulances = await Ambulance.find({"status": AmbulanceStatus.IDLE}).to_list()
-
+    print(ambulances)
     if not ambulances:
         print("No idle ambulances found.")
         return None, None, None
@@ -61,6 +62,16 @@ async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
             best_path = path
     except Exception as e:
         print(f"Error computing route for best ambulance {best_ambulance.id}: {e}")
+        try:
+            eta, path = await compute_route_eta_and_path(
+                amb.lat, amb.lng, event_lat, event_lng
+            )
+            if eta is not None and eta < best_eta:
+                best_eta = eta
+                best_ambulance = amb
+                best_path = [Point(lat=pt[0], lng=pt[1]) for pt in path]
+        except Exception as e:
+            print(f"Error computing route for ambulance {amb.id}: {e}")
 
     if best_ambulance is None:
         return None, None, None
@@ -93,9 +104,9 @@ async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
 async def main():
     await init_db()
     # Example coordinates
-    event_id = PydanticObjectId("696c06ed7b77d573b3d9d6d6")
+    events = await Event.find_all().to_list()
 
-    nearest_ambulance, eta, path = await find_nearest_idle_ambulance(event_id)
+    nearest_ambulance, eta, path = await get_ambulance_and_path(events[0].id)
 
     if nearest_ambulance:
         print(f"Nearest ambulance: {nearest_ambulance.id}, ETA: {eta} seconds")

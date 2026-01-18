@@ -4,6 +4,11 @@ export type AmbulanceStatus = "idle" | "enroute" | "unavailable";
 
 export type IdValue = string | number;
 
+export type Point = {
+  lat: number;
+  lng: number;
+};
+
 export type Event = {
   id: string;
   severity: EventSeverity;
@@ -36,6 +41,7 @@ export type Ambulance = {
   event_id: number | null;
   eta_seconds?: number | null;
   updated_at: string;
+  path?: Point[] | null;
 };
 
 export type Hospital = {

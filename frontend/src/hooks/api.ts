@@ -13,7 +13,7 @@ import {
 } from "../seed";
 import type { Ambulance, Camera, Event, Hospital } from "../types";
 
-const REFRESH_INTERVAL = 10000; // Match the 10-second analysis interval
+const REFRESH_INTERVAL = 100000; // Match the 10-second analysis interval
 
 /**
  * Fetch emergency events with auto-refresh.
@@ -28,7 +28,7 @@ export function useEvents() {
         return mockEvents;
       }
     },
-    refetchInterval: 200, // Refetch every 10 seconds
+    refetchInterval: REFRESH_INTERVAL, // Refetch every 10 seconds
     refetchIntervalInBackground: true, // Continue refetching when tab is in background
     staleTime: 0, // Always consider data stale so it refetches on interval
     initialData: [],
@@ -78,7 +78,7 @@ export function useAmbulances() {
         return mockAmbulances;
       }
     },
-    refetchInterval: 1000,
+    refetchInterval: REFRESH_INTERVAL,
     refetchIntervalInBackground: true,
     staleTime: 2000,
     initialData: [],

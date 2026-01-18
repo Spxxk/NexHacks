@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from models import Event, EventStatus, Ambulance, AmbulanceStatus
+from utils.live_ws import broadcast_update
 from beanie import PydanticObjectId
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/events", tags=["Events"])
 
 class EventResponse(BaseModel):
     """Response model for events that converts _id to id and ObjectIds to strings."""
+
     id: str
     severity: str
     title: str
@@ -50,7 +52,7 @@ async def get_events(status: Optional[EventStatus] = None):
         events = await Event.find(Event.status == status).to_list()
     else:
         events = await Event.find_all().to_list()
-    
+
     # Convert Event documents to EventResponse
     return [EventResponse.from_event(event) for event in events]
 
@@ -61,10 +63,10 @@ async def resolve_event(event_id: int):
     event = await Event.get(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     event.status = EventStatus.RESOLVED
     event.resolved_at = datetime.utcnow()
-    
+
     # Free the ambulance
     if event.ambulance_id:
         ambulance = await Ambulance.get(event.ambulance_id)
@@ -74,7 +76,9 @@ async def resolve_event(event_id: int):
             ambulance.eta_seconds = None
             ambulance.updated_at = datetime.utcnow()
             await ambulance.save()
-    
+            await broadcast_update("ambulance", ambulance)
+
     await event.save()
-    
+    await broadcast_update("event", event)
+
     return {"ok": True, "event": event}

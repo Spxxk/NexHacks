@@ -167,8 +167,8 @@ async def seed_data():
     ambulances = []
     for index, hospital in enumerate(hospitals_data):
         ambulance = Ambulance(
-            lat=hospital["lat"],
-            lng=hospital["lng"],
+            lat=hospital["lat"] + 0.0001,
+            lng=hospital["lng"] - 0.0002,
             status=AmbulanceStatus.IDLE,
             updated_at=datetime.utcnow(),
         )

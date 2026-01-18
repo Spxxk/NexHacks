@@ -24,7 +24,7 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
 
     setIsTriggering(true);
     try {
-      await triggerCameraEmergency(camera.id);
+      await triggerCameraEmergency(camera._id);
       // Invalidate queries to refresh events
       await queryClient.invalidateQueries({ queryKey: ["events"] });
       await queryClient.invalidateQueries({ queryKey: ["cameras"] });
@@ -39,7 +39,7 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-base font-semibold">Camera {camera.id}</p>
+        <p className="text-base font-semibold">Camera {camera.name}</p>
         <p className="text-xs text-slate-400">
           {events.length} recorded events
         </p>
@@ -49,7 +49,7 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
         alt="Camera snapshot"
         className="w-full rounded-2xl border border-white/10"
       />
-      
+
       {/* Manual Emergency Trigger Button */}
       <div className="space-y-2">
         {!showConfirm ? (
@@ -64,7 +64,7 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
         ) : (
           <div className="space-y-2">
             <p className="text-xs text-slate-300">
-              Confirm emergency trigger for {camera.id}?
+              Confirm emergency trigger for {camera.name}?
             </p>
             <div className="flex gap-2">
               <button

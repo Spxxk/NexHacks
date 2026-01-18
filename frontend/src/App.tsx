@@ -5,9 +5,11 @@ import {
 } from "./components/Notification";
 import Drawer from "./components/Drawer";
 import LifelineMap from "./components/LifelineMap";
+import LiveDataPanel from "./components/LiveDataPanel";
 import Navbar from "./components/Navbar";
 import EventsPage from "./pages/Events";
 import { useAmbulances, useCameras, useEvents } from "./hooks/api";
+import { useLiveData } from "./hooks/useLiveData";
 import type { Ambulance, Camera, DrawerSelection, Event } from "./types";
 import { isEmergencySeverity } from "./types";
 import EventDrawer from "./components/drawers/EventDrawer";
@@ -18,12 +20,14 @@ import AmbulanceDrawer from "./components/drawers/AmbulanceDrawer";
  * Top-level Lifeline application component.
  */
 function App() {
+  useLiveData();
   const { data: events } = useEvents();
   console.log("Events:", events);
 
   const { data: cameras } = useCameras();
-
+  console.log("Cameras:", cameras);
   const { data: ambulances } = useAmbulances();
+  console.log("Ambulances:", ambulances);
 
   const [selection, setSelection] = useState<DrawerSelection | null>(null);
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState<
@@ -83,6 +87,7 @@ function App() {
                   onSelect={(next) => setSelection(next)}
                 />
               </main>
+              <LiveDataPanel />
             </>
           ) : (
             <main className="flex-1 overflow-y-auto">

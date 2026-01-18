@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { triggerCameraEmergency } from "../../api/controller";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Camera, Event } from "../../types";
@@ -14,7 +14,16 @@ type CameraDrawerProps = {
 export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
   const [isTriggering, setIsTriggering] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [imageKey, setImageKey] = useState(0);
   const queryClient = useQueryClient();
+
+  // Refresh camera image every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setImageKey((prev) => prev + 1);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleTriggerEmergency = async () => {
     if (!showConfirm) {
@@ -24,7 +33,7 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
 
     setIsTriggering(true);
     try {
-      await triggerCameraEmergency(camera._id);
+      await triggerCameraEmergency(camera.id);
       // Invalidate queries to refresh events
       await queryClient.invalidateQueries({ queryKey: ["events"] });
       await queryClient.invalidateQueries({ queryKey: ["cameras"] });
@@ -45,9 +54,10 @@ export default function CameraDrawer({ camera, events }: CameraDrawerProps) {
         </p>
       </div>
       <img
-        src={camera.latest_frame_url}
-        alt="Camera snapshot"
+        src={`${camera.latest_frame_url}?t=${imageKey}`}
+        alt={`Camera snapshot - ${camera.name || camera.id}`}
         className="w-full rounded-2xl border border-white/10"
+        key={`${camera.id}-${imageKey}`}
       />
 
       {/* Manual Emergency Trigger Button */}

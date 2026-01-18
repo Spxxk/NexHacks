@@ -1,8 +1,8 @@
-from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException
+from beanie import PydanticObjectId  # type: ignore
+from fastapi import APIRouter, HTTPException  # type: ignore
 from typing import List, Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 import math
 import random
 
@@ -24,6 +24,39 @@ class RegisterCameraRequest(BaseModel):
 async def get_cameras():
     """Get all cameras."""
     cameras = await Camera.find_all().to_list()
+    # Ensure all cameras have correct URLs based on their names
+    # This fixes any cameras that might have been created with wrong URLs
+    # Handle both hyphen and underscore variants (e.g., "Astra-18" vs "Astra_18")
+    # NOTE: All three cameras in DB currently have port 5055 - this fixes Astra-12 and Astra-18
+    camera_port_map = {
+        "CAM_12": 5055,  # CAM cameras use underscores
+        "Astra-12": 5056,  # Currently wrong (5055), should be 5056
+        "Astra-18": 5057,  # Astra cameras use hyphens
+    }
+    updated = False
+    for camera in cameras:
+        if camera.name:
+            # Check exact match first
+            expected_port = camera_port_map.get(camera.name)
+            # If no exact match, try normalized name (hyphen/underscore variants)
+            if expected_port is None:
+                normalized_name = camera.name.replace("-", "_")
+                expected_port = camera_port_map.get(normalized_name)
+                if expected_port is None:
+                    normalized_name = camera.name.replace("_", "-")
+                    expected_port = camera_port_map.get(normalized_name)
+            
+            if expected_port is not None:
+                expected_url = f"http://localhost:{expected_port}/latest_frame"
+                if camera.latest_frame_url != expected_url:
+                    camera.latest_frame_url = expected_url
+                    await camera.save()
+                    updated = True
+    
+    if updated:
+        # Re-fetch to return updated cameras
+        cameras = await Camera.find_all().to_list()
+    
     return cameras
 
 
@@ -141,7 +174,7 @@ async def trigger_emergency(camera_id: str):
         lng=jitter_lng,
         camera_id=camera.id,  # Use camera's MongoDB _id
         status=EventStatus.OPEN,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     await event.insert()
     await broadcast_all("events")
@@ -158,7 +191,7 @@ async def trigger_emergency(camera_id: str):
         ambulance.status = AmbulanceStatus.ENROUTE
         ambulance.event_id = event.id
         ambulance.eta_seconds = eta_seconds
-        ambulance.updated_at = datetime.utcnow()
+        ambulance.updated_at = datetime.now(timezone.utc)
         await ambulance.save()
         await broadcast_all("ambulances")
 

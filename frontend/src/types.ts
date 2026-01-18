@@ -13,6 +13,7 @@ export type Event = {
   lat: number;
   lng: number;
   camera_id: string;
+  camera_name?: string | null;
   ambulance_id: string | null;
   status: EventStatus;
   created_at: string | Date;

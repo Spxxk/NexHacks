@@ -35,10 +35,42 @@ Use **3 terminals**.
 
 ### Terminal 1 — Camera server (port 5055)
 
+For a single camera instance:
+
 ```bash
 cd /Users/owen/NexHacks/camera
 npm run dev
 ```
+
+**For multiple cameras (3 instances):**
+
+Run 3 separate camera server instances with different ports, camera names, and video files:
+
+**Terminal 1A - Camera 1 (CAM_12, port 5055, clip1.mp4):**
+```bash
+cd /Users/owen/NexHacks/camera
+CAMERA_LOCATION=CAM_12 PORT=5055 VIDEO_INPUT=./clip1.mp4 npm run dev
+```
+
+**Terminal 1B - Camera 2 (CAM_18, port 5056, clip2.mp4):**
+```bash
+cd /Users/owen/NexHacks/camera
+CAMERA_LOCATION=CAM_18 PORT=5056 VIDEO_INPUT=./clip2.mp4 npm run dev
+```
+
+**Terminal 1C - Camera 3 (CAM_24, port 5057, clip3.mp4):**
+```bash
+cd /Users/owen/NexHacks/camera
+CAMERA_LOCATION=CAM_24 PORT=5057 VIDEO_INPUT=./clip3.mp4 npm run dev
+```
+
+Each camera instance will:
+- Use its own video file (specified via `VIDEO_INPUT`)
+- Use the same Overshoot API (configured via environment variables)
+- Post events to the backend with its unique camera name
+- Serve clips at its own port (e.g., `http://localhost:5055/latest_clip.mp4` for CAM_12)
+
+**Note:** If you want all cameras to use the same video file, you can omit the `VIDEO_INPUT` variable and all will default to `./clip.mp4`.
 
 - Wait until you see `clip written: ... true` a few times (clip is built every 1s after ~3s of frames).
 - `http://localhost:5055/latest_clip.mp4` should return a video (check in browser or `curl -I`).

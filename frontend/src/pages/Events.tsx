@@ -123,12 +123,16 @@ export default function EventsPage({ onSelectEvent }: EventsPageProps) {
       },
       {
         header: "Camera",
-        accessorKey: "camera_id",
-        cell: (info: CellContext<Event, unknown>) => (
-          <span className="text-slate-300 font-mono text-xs">
-            {info.getValue() as string}
-          </span>
-        ),
+        accessorKey: "camera_name",
+        cell: (info: CellContext<Event, unknown>) => {
+          const event = info.row.original;
+          const cameraName = event.camera_name || event.camera_id;
+          return (
+            <span className="text-slate-300 font-mono text-xs">
+              {cameraName}
+            </span>
+          );
+        },
       },
       {
         header: "Status",

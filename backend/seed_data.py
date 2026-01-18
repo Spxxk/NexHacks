@@ -51,7 +51,7 @@ async def seed_data():
 
     logger.info("✅ Collections dropped, seeding data...")
 
-    # 🔹 Seed cameras
+    # 🔹 Seed cameras (3 cameras for Overshoot integration)
     base_lat = 40.44089893147938
     base_lng = -79.94277710160165
 
@@ -60,19 +60,19 @@ async def seed_data():
             "lat": base_lat + 0.0000,
             "lng": base_lng + -0.0000,
             "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "CAM_12",  # Match camera server's CAMERA_LOCATION
-        },
-        {
-            "lat": 40.4410,
-            "lng": -79.9959,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-12",
+            "name": "CAM_12",  # Camera 1 - port 5055
         },
         {
             "lat": base_lat + 0.0035,
             "lng": base_lng + 0.0027,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-18",
+            "latest_frame_url": "http://localhost:5056/latest_frame",
+            "name": "Astra-12",  # Camera 2 - port 5056 (matches start-all.ts)
+        },
+        {
+            "lat": base_lat + -0.0034,
+            "lng": base_lng + 0.0035,
+            "latest_frame_url": "http://localhost:5057/latest_frame",
+            "name": "Astra-18",  # Camera 3 - port 5057 (Astra cameras use hyphens)
         },
     ]
 

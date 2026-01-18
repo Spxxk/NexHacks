@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
-from models import Event, EventStatus, Ambulance, AmbulanceStatus
+from models import Event, EventStatus, Ambulance, AmbulanceStatus, Camera
 from utils.live_ws import broadcast_all
 from beanie import PydanticObjectId
 
@@ -21,14 +21,21 @@ class EventResponse(BaseModel):
     lat: float
     lng: float
     camera_id: str
+    camera_name: Optional[str] = None
     ambulance_id: Optional[str] = None
     status: str
     created_at: datetime
     resolved_at: Optional[datetime] = None
 
     @classmethod
-    def from_event(cls, event: Event) -> "EventResponse":
+    async def from_event(cls, event: Event) -> "EventResponse":
         """Convert Event document to EventResponse."""
+        # Fetch camera name if camera_id exists
+        camera_name = None
+        if event.camera_id:
+            camera = await Camera.get(event.camera_id)
+            camera_name = camera.name if camera else None
+        
         return cls(
             id=str(event.id),
             severity=event.severity.value,
@@ -38,6 +45,7 @@ class EventResponse(BaseModel):
             lat=event.lat,
             lng=event.lng,
             camera_id=str(event.camera_id),
+            camera_name=camera_name,
             ambulance_id=str(event.ambulance_id) if event.ambulance_id else None,
             status=event.status.value,
             created_at=event.created_at,
@@ -53,8 +61,8 @@ async def get_events(status: Optional[EventStatus] = None):
     else:
         events = await Event.find_all().to_list()
 
-    # Convert Event documents to EventResponse
-    return [EventResponse.from_event(event) for event in events]
+    # Convert Event documents to EventResponse with camera names
+    return [await EventResponse.from_event(event) for event in events]
 
 
 @router.post("/{event_id}/resolve")

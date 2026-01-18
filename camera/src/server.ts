@@ -12,11 +12,15 @@ import FormData from "form-data";
  * Hackathon constants
  * =========================
  */
-const PORT = 5055;
-const CAMERA_LOCATION = "CAM_12";
+const PORT = parseInt(process.env.PORT || "5055", 10);
+const CAMERA_LOCATION = process.env.CAMERA_LOCATION || process.env.CAMERA_NAME || "CAM_12";
 
 // Use a looping mp4 as the camera feed (stable for hackathon demos)
-const VIDEO_INPUT = "./clip.mp4";
+// Can be overridden via VIDEO_INPUT environment variable for different cameras
+const VIDEO_INPUT = process.env.VIDEO_INPUT || "./clip.mp4";
+
+// Unique clip path per camera (prevents collisions when multiple instances run)
+const CLIP_FILE_NAME = `.latest_clip_${CAMERA_LOCATION}.mp4`;
 
 // Frame + clip settings
 const FPS = 10;               // capture fps into buffer (10 is enough)
@@ -72,7 +76,7 @@ app.get("/latest_frame", (_req, res) => {
 
 // Latest clip as MP4
 app.get("/latest_clip.mp4", (_req, res) => {
-  const clipAbs = path.resolve(process.cwd(), ".latest_clip.mp4");
+  const clipAbs = path.resolve(process.cwd(), CLIP_FILE_NAME);
 
   // Debug: log the exact path being used
   console.log("Serving clip:", clipAbs);
@@ -176,7 +180,8 @@ function startFrameCapture() {
  * =========================
  */
 async function buildClipFromFrames(outPath: string, framesToUse: Frame[]) {
-  const tmpDir = path.join(process.cwd(), ".tmp_frames");
+  // Unique temp directory per camera to prevent conflicts when multiple instances run
+  const tmpDir = path.join(process.cwd(), `.tmp_frames_${CAMERA_LOCATION}`);
   fs.rmSync(tmpDir, { recursive: true, force: true });
   fs.mkdirSync(tmpDir, { recursive: true });
 
@@ -343,7 +348,7 @@ async function postEventToBackend(result: { title: string; description: string; 
       severity: result.severity,
       title: result.title,
       description: result.description,
-      reference_clip_url: `http://localhost:${PORT}/latest_clip.mp4`,
+      reference_clip_url: `http://localhost:${PORT}/latest_clip.mp4`, // Each camera serves its own clip at its own port
     };
     
     console.log(`[Analysis] Posting event to backend:`, payload);
@@ -357,14 +362,24 @@ async function postEventToBackend(result: { title: string; description: string; 
 
     console.log(`[Analysis] Backend response status: ${response.status}`);
 
+    // Always read response as text first (handles both JSON and non-JSON responses)
+    const responseText = await response.text();
+    console.log(`[Analysis] Backend response text:`, responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[Analysis] Backend POST error: ${response.status} - ${errorText}`);
+      console.error(`[Analysis] Backend POST error: ${response.status} - ${responseText}`);
       return false;
     }
 
-    const responseData = await response.json();
-    console.log(`[Analysis] Backend response:`, responseData);
+    // Try to parse as JSON if successful
+    let responseData: any;
+    try {
+      responseData = JSON.parse(responseText);
+      console.log(`[Analysis] Backend response (parsed):`, responseData);
+    } catch (e) {
+      // Not JSON, that's okay - just log the text
+      console.log(`[Analysis] Backend response is not JSON, using raw text`);
+    }
 
     if (result.severity === "emergency" && response.ok) {
       lastEmergencyTitle = result.title;
@@ -438,13 +453,13 @@ async function runAnalysisAndPost() {
     // Post to backend (for both informational and emergency events)
     const posted = await postEventToBackend(result);
     
-    // Mark as analyzed (regardless of whether post succeeded, to avoid re-analyzing same window)
-    lastAnalyzedAt = now;
-    
+    // Only mark as analyzed if post succeeded (prevents repeated failures from being hidden)
     if (posted) {
+      lastAnalyzedAt = now;
       console.log(`[Analysis] ✅ Successfully posted ${result.severity} event: ${result.title}`);
     } else {
-      console.warn(`[Analysis] ❌ Failed to post ${result.severity} event: ${result.title}`);
+      console.warn(`[Analysis] ❌ Failed to post ${result.severity} event: ${result.title} - will retry next cycle`);
+      // Don't set lastAnalyzedAt - this allows retry in the next cycle
     }
   } catch (e) {
     console.warn("Analysis loop error:", (e as Error).message);
@@ -480,7 +495,7 @@ function startClipLoop() {
       if (frames.length < MAX_FRAMES) return;
 
       const framesToUse = frames.slice(-MAX_FRAMES);
-      const clipAbs = path.resolve(process.cwd(), ".latest_clip.mp4");
+      const clipAbs = path.resolve(process.cwd(), CLIP_FILE_NAME);
 
       console.log("frames buffered:", frames.length);
 
@@ -503,6 +518,9 @@ function startClipLoop() {
  */
 app.listen(PORT, () => {
   console.log(`Camera server running on http://localhost:${PORT}`);
+  console.log(`Camera location: ${CAMERA_LOCATION}`);
+  console.log(`Overshoot API URL: ${OVERSHOOT_API_URL}`);
+  console.log(`Backend URL: ${BACKEND_URL}`);
   startFrameCapture();
   startClipLoop();
   startAnalysisLoop();

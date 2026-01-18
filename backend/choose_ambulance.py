@@ -14,6 +14,7 @@ from models import Ambulance, AmbulanceStatus, Event, PydanticObjectId
 from datetime import datetime
 from models import Ambulance, AmbulanceStatus
 from maps_call import compute_route_eta_and_path
+from routes.cameras import calculate_distance
 
 
 async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
@@ -39,18 +40,27 @@ async def find_nearest_idle_ambulance(event_id: PydanticObjectId):
     best_eta = float("inf")
     best_path = None
 
-    # Compute ETA for each idle ambulance
+    min = float("inf")
+
+    # Find closes ambulace
     for amb in ambulances:
-        try:
-            eta, path = await compute_route_eta_and_path(
-                amb.lat, amb.lng, event_lat, event_lng
-            )
-            if eta is not None and eta < best_eta:
-                best_eta = eta
-                best_ambulance = amb
-                best_path = path
-        except Exception as e:
-            print(f"Error computing route for ambulance {amb.id}: {e}")
+        distance = calculate_distance(event_lat, event_lng, amb.lat, amb.lng)
+        if distance < min:
+            min = distance
+            best_ambulance = amb
+
+    print(f"Closest ambulance is {best_ambulance.id} at distance {min} km")
+
+    # Run API to find ETA and path for the closest ambulance
+    try:
+        eta, path = await compute_route_eta_and_path(
+            best_ambulance.lat, best_ambulance.lng, event_lat, event_lng
+        )
+        if eta is not None and eta < best_eta:
+            best_eta = eta
+            best_path = path
+    except Exception as e:
+        print(f"Error computing route for best ambulance {best_ambulance.id}: {e}")
 
     if best_ambulance is None:
         return None, None, None

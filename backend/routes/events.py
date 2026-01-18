@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from models import Event, EventStatus, Ambulance, AmbulanceStatus
-from utils.live_ws import broadcast_update
+from utils.live_ws import broadcast_all
 from beanie import PydanticObjectId
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -76,9 +76,9 @@ async def resolve_event(event_id: int):
             ambulance.eta_seconds = None
             ambulance.updated_at = datetime.utcnow()
             await ambulance.save()
-            await broadcast_update("ambulance", ambulance)
+            await broadcast_all("ambulances")
 
     await event.save()
-    await broadcast_update("event", event)
+    await broadcast_all("events")
 
     return {"ok": True, "event": event}

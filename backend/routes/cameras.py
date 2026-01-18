@@ -7,7 +7,7 @@ import math
 import random
 
 from models import Camera, Event, EventStatus, Severity, Ambulance, AmbulanceStatus
-from utils.live_ws import broadcast_update
+from utils.live_ws import broadcast_all
 
 router = APIRouter(prefix="/cameras", tags=["Cameras"])
 
@@ -42,7 +42,7 @@ async def register_camera(request: RegisterCameraRequest):
         name=request.name or request.id,
     )
     await camera.insert()
-    await broadcast_update("camera", camera)
+    await broadcast_all("cameras")
 
     return {"ok": True, "camera": camera}
 
@@ -144,7 +144,7 @@ async def trigger_emergency(camera_id: str):
         created_at=datetime.utcnow(),
     )
     await event.insert()
-    await broadcast_update("event", event)
+    await broadcast_all("events")
 
     # Assign nearest idle ambulance
     ambulance = await find_nearest_idle_ambulance(jitter_lat, jitter_lng)
@@ -160,12 +160,12 @@ async def trigger_emergency(camera_id: str):
         ambulance.eta_seconds = eta_seconds
         ambulance.updated_at = datetime.utcnow()
         await ambulance.save()
-        await broadcast_update("ambulance", ambulance)
+        await broadcast_all("ambulances")
 
         event.ambulance_id = ambulance.id
         event.status = EventStatus.ENROUTE
         await event.save()
-        await broadcast_update("event", event)
+        await broadcast_all("events")
 
     print(
         f"[Backend] Manual emergency triggered for camera {camera_id}: {scenario['title']}"

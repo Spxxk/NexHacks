@@ -4,7 +4,23 @@ from typing import Any
 from fastapi import WebSocket
 from fastapi.encoders import jsonable_encoder
 
+from models import Ambulance, Event, Camera
+
 logger = logging.getLogger(__name__)
+
+
+async def broadcast_all(type: str):
+    """Broadcast the current state of all ambulances to connected clients."""
+    if type == "ambulances":
+        all_ambulances = await Ambulance.find_all().to_list()
+        print("Broadcasting ambulances:", all_ambulances)
+        await broadcast_update("ambulances", all_ambulances)
+    if type == "events":
+        all_events = await Event.find_all().to_list()
+        await broadcast_update("events", all_events)
+    if type == "cameras":
+        all_cameras = await Camera.find_all().to_list()
+        await broadcast_update("cameras", all_cameras)
 
 
 class LiveConnectionManager:

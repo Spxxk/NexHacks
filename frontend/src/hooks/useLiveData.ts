@@ -5,9 +5,9 @@ import type { Ambulance, Camera, Event } from "../types";
 const WS_URL = "ws://localhost:8000/ws/live";
 
 type LiveMessage =
-  | { type: "ambulance"; data: Ambulance }
-  | { type: "event"; data: Event }
-  | { type: "camera"; data: Camera };
+  | { type: "ambulances"; data: Ambulance[] }
+  | { type: "events"; data: Event[] }
+  | { type: "cameras"; data: Camera[] };
 
 type LiveStatus = "connecting" | "open" | "closed" | "error";
 
@@ -36,23 +36,24 @@ export function useLiveData() {
     };
 
     ws.onmessage = (event) => {
+      console.log("[Live] Message received:", event.data);
       try {
         const message = JSON.parse(event.data) as LiveMessage;
 
-        if (message.type === "ambulance") {
+        if (message.type === "ambulances") {
           // Replace the entire ambulances array
-          queryClient.setQueryData<Ambulance[]>(["ambulances"], [message.data]);
+          queryClient.setQueryData<Ambulance[]>(["ambulances"], message.data);
           return;
         }
 
-        if (message.type === "event") {
-          queryClient.setQueryData<Event[]>(["events"], [message.data]);
+        if (message.type === "events") {
+          queryClient.setQueryData<Event[]>(["events"], message.data);
           return;
         }
 
-        if (message.type === "camera") {
+        if (message.type === "cameras") {
           // Normalize to _id if needed
-          queryClient.setQueryData<Camera[]>(["cameras"], [message.data]);
+          queryClient.setQueryData<Camera[]>(["cameras"], message.data);
           return;
         }
       } catch (error) {

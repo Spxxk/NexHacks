@@ -6,7 +6,7 @@ from datetime import datetime
 from beanie import PydanticObjectId
 
 from models import Ambulance, AmbulanceStatus, Event, EventStatus
-from utils.live_ws import broadcast_update
+from utils.live_ws import broadcast_all
 from schemas import Point
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ async def _walk_path(
         ambulance.status = status
         ambulance.path = path
         await ambulance.save()
-        await broadcast_update("ambulance", ambulance)
+        await broadcast_all("ambulances")
         logger.info(
             "Ambulance %s moved to %s,%s",
             ambulance.id,
@@ -73,7 +73,7 @@ async def simulate_ambulance(
             event.status = EventStatus.RESOLVED
             event.resolved_at = datetime.utcnow()
             await event.save()
-            await broadcast_update("event", event)
+            await broadcast_all("events")
 
     reverse_path = list(reversed(original_path))
     await _walk_path(ambulance, reverse_path, returning_status, update_interval_ms)
@@ -81,7 +81,7 @@ async def simulate_ambulance(
     ambulance.path = []
     ambulance.status = free_status
     await ambulance.save()
-    await broadcast_update("ambulance", ambulance)
+    await broadcast_all("ambulances")
 
 
 if __name__ == "__main__":
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     async def main():
         await init_db()
         # Replace with a valid ambulance ID from your database
-        ambulance_id = PydanticObjectId("696c274d1bba634c95152c6a")
+        ambulance_id = PydanticObjectId("696c2d67f92424a53226ff1b")
         await simulate_ambulance(ambulance_id, update_interval_ms=2000)
 
     asyncio.run(main())

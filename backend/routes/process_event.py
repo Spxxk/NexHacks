@@ -6,7 +6,7 @@ import math
 import random
 
 from models import Event, EventStatus, Severity, Camera, Ambulance, AmbulanceStatus
-from utils.live_ws import broadcast_update
+from utils.live_ws import broadcast_all
 
 router = APIRouter(tags=["Process Event"])
 
@@ -79,7 +79,7 @@ async def process_event(request: ProcessEventRequest):
             name=request.camera_id,
         )
         await camera.insert()
-        await broadcast_update("camera", camera)
+        await broadcast_all("cameras")
         print(f"[Backend] Created new camera: {camera.id} ({camera.name})")
     else:
         print(f"[Backend] Found existing camera: {camera.id} ({camera.name})")
@@ -101,7 +101,7 @@ async def process_event(request: ProcessEventRequest):
         created_at=datetime.utcnow(),
     )
     await event.insert()
-    await broadcast_update("event", event)
+    await broadcast_all("events")
     print(f"[Backend] Created event: {event.id} - {event.title} ({event.severity})")
 
     # If emergency, assign nearest idle ambulance
@@ -119,11 +119,11 @@ async def process_event(request: ProcessEventRequest):
             ambulance.eta_seconds = eta_seconds
             ambulance.updated_at = datetime.utcnow()
             await ambulance.save()
-            await broadcast_update("ambulance", ambulance)
+            await broadcast_all("ambulances")
 
             event.ambulance_id = ambulance.id
             event.status = EventStatus.ENROUTE
             await event.save()
-            await broadcast_update("event", event)
+            await broadcast_all("events")
 
     return {"ok": True, "event": event}

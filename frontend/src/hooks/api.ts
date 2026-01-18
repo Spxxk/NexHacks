@@ -13,7 +13,7 @@ import {
 } from "../seed";
 import type { Ambulance, Camera, Event, Hospital } from "../types";
 
-const REFRESH_INTERVAL = 100000; // Match the 10-second analysis interval
+const REFRESH_INTERVAL = 10000; // Match the 10-second analysis interval
 
 /**
  * Fetch emergency events with auto-refresh.

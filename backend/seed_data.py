@@ -74,54 +74,6 @@ async def seed_data():
             "latest_frame_url": "http://localhost:5055/latest_frame",
             "name": "Astra-18",
         },
-        {
-            "lat": base_lat + 0.0062,
-            "lng": base_lng + 0.0048,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-06",
-        },
-        {
-            "lat": base_lat + -0.0014,
-            "lng": base_lng + -0.0028,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-01",
-        },
-        {
-            "lat": base_lat + -0.0034,
-            "lng": base_lng + 0.0035,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-02",
-        },
-        {
-            "lat": base_lat + 0.0019,
-            "lng": base_lng + 0.0054,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-03",
-        },
-        {
-            "lat": base_lat + 0.0048,
-            "lng": base_lng + 0.0067,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-04",
-        },
-        {
-            "lat": base_lat + 0.0080,
-            "lng": base_lng + -0.0001,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-05",
-        },
-        {
-            "lat": base_lat + -0.0041,
-            "lng": base_lng + -0.0015,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-07",
-        },
-        {
-            "lat": base_lat + 0.0028,
-            "lng": base_lng + 0.0123,
-            "latest_frame_url": "http://localhost:5055/latest_frame",
-            "name": "Astra-08",
-        },
     ]
 
     cameras = [Camera(**cam) for cam in cameras_data]
